@@ -118,4 +118,6 @@ TRACK_ID=$(tidal-cli --json artist tracks "$SIMILAR" | jq -r '.[0].id')
 tidal-cli --json playlist add-track --playlist-id <id> --track-id "$TRACK_ID"
 ```
 
+**Cover art:** `track info` and `album info` return a `coverUrl` field (640x640 JPEG). Always show it to the user when displaying track or album details — render it as an image.
+
 **Exit codes:** 0 = success, 1 = error, 2 = missing argument. Errors go to stderr with `Error:` prefix.
