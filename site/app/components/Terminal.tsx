@@ -5,9 +5,10 @@ import { motion } from "framer-motion";
 interface TerminalProps {
   lines: { prompt?: boolean; text: string; dim?: boolean }[];
   title?: string;
+  compact?: boolean;
 }
 
-export function Terminal({ lines, title = "Terminal" }: TerminalProps) {
+export function Terminal({ lines, title = "Terminal", compact = false }: TerminalProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -29,7 +30,7 @@ export function Terminal({ lines, title = "Terminal" }: TerminalProps) {
       </div>
 
       {/* Content */}
-      <div className="p-5 font-mono text-sm leading-7 overflow-x-auto">
+      <div className={`p-5 font-mono text-sm ${compact ? "leading-5" : "leading-7"} overflow-x-auto text-left`}>
         {lines.map((line, i) => (
           <motion.div
             key={i}

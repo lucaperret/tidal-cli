@@ -253,21 +253,16 @@ export default function Home() {
             >
               <Terminal
                 title="JSON output"
+                compact
                 lines={[
                   { prompt: true, text: "tidal-cli --json playlist list" },
                   { text: "" },
-                  { text: "[" },
-                  { text: "  {" },
-                  { text: '    "id": "a20fff4a-...",' },
-                  { text: '    "name": "Late Night Electronic",' },
-                  { text: '    "numberOfItems": 24,' },
-                  {
-                    text: '    "createdAt": "2025-04-20T..."',
-                    dim: true,
-                  },
-                  { text: "  }," },
-                  { text: "  ..." },
-                  { text: "]" },
+                  { text: "[{" },
+                  { text: '  "id": "a20fff4a-...",' },
+                  { text: '  "name": "Late Night Electronic",' },
+                  { text: '  "numberOfItems": 24,' },
+                  { text: '  "createdAt": "2025-04-20T..."', dim: true },
+                  { text: "}, ...]" },
                 ]}
               />
             </motion.div>
