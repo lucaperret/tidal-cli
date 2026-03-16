@@ -69,11 +69,12 @@ jobs:
           body: |
             ## Install
 
+            **npm:**
             ```bash
             npm install -g @lucanova/tidal-cli
             ```
 
-            Or install the OpenClaw skill:
+            **OpenClaw skill:**
             ```bash
             clawhub install tidal-cli
             ```
