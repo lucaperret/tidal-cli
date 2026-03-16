@@ -1,6 +1,6 @@
 {
   "name": "@lucanova/tidal-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CLI for Tidal music streaming service, designed for LLM agent automation",
   "main": "dist/index.js",
   "bin": {
