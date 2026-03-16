@@ -150,6 +150,16 @@ export default function Home() {
                 "playback info 5756235",
               ]}
             />
+            <FeatureCard
+              icon={<LibraryIcon />}
+              title="Library"
+              description="Manage your favorites. Add or remove artists, albums, tracks, and videos."
+              commands={[
+                "library add --track-id ...",
+                "library favorite-playlists",
+                "history tracks",
+              ]}
+            />
           </div>
         </div>
       </section>
@@ -344,6 +354,14 @@ function DiscoveryIcon() {
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
       <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+    </svg>
+  );
+}
+
+function LibraryIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
     </svg>
   );
 }
