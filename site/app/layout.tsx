@@ -16,10 +16,18 @@ export const metadata: Metadata = {
   title: "tidal-cli — Command-line interface for Tidal",
   description:
     "Control Tidal from your terminal. Search, manage playlists, play music, and automate with LLM agents.",
+  metadataBase: new URL("https://tidal-cli.lucaperret.ch"),
   openGraph: {
     title: "tidal-cli",
-    description: "Command-line interface for Tidal music streaming",
+    description: "Control Tidal from your terminal. Built for developers and AI agents.",
     type: "website",
+    url: "https://tidal-cli.lucaperret.ch",
+    siteName: "tidal-cli",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "tidal-cli",
+    description: "Control Tidal from your terminal. Built for developers and AI agents.",
   },
 };
 
