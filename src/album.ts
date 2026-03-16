@@ -18,7 +18,7 @@ export async function getAlbumInfo(albumId: string, json: boolean): Promise<void
       path: { id: albumId },
       query: {
         countryCode: await getCountryCode(),
-        include: ['artists'] as any,
+        include: ['artists', 'coverArt'] as any,
       },
     },
   });
@@ -35,6 +35,12 @@ export async function getAlbumInfo(albumId: string, json: boolean): Promise<void
     .filter((item: any) => item.type === 'artists')
     .map((item: any) => item.attributes?.name ?? item.id);
 
+  // Get cover art from included artworks
+  const artwork = included.find((item: any) => item.type === 'artworks');
+  const files = artwork?.attributes?.files ?? [];
+  const preferred = files.find((f: any) => f.meta?.width === 640) ?? files[0];
+  const coverUrl = preferred?.href;
+
   const result = {
     id: albumId,
     title: attrs.title ?? 'Unknown',
@@ -46,6 +52,7 @@ export async function getAlbumInfo(albumId: string, json: boolean): Promise<void
     popularity: attrs.popularity,
     explicit: attrs.explicit,
     barcodeId: attrs.barcodeId,
+    coverUrl,
   };
 
   if (json) {
@@ -62,6 +69,7 @@ export async function getAlbumInfo(albumId: string, json: boolean): Promise<void
   if (result.popularity !== undefined) console.log(`  Popularity: ${result.popularity}`);
   if (result.explicit !== undefined) console.log(`  Explicit: ${result.explicit}`);
   if (result.barcodeId) console.log(`  Barcode: ${result.barcodeId}`);
+  if (result.coverUrl) console.log(`  Cover: ${result.coverUrl}`);
   console.log();
 }
 

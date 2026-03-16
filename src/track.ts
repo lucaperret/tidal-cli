@@ -38,6 +38,24 @@ export async function getTrackInfo(trackId: string, json: boolean): Promise<void
   const album = included.find((item: any) => item.type === 'albums');
   const albumName = album?.attributes?.title ?? undefined;
 
+  // Fetch cover art if we have an album
+  let coverUrl: string | undefined;
+  if (album?.id) {
+    try {
+      const { data: artData } = await client.GET('/albums/{id}/relationships/coverArt' as any, {
+        params: {
+          path: { id: album.id },
+          query: { countryCode: await getCountryCode(), include: ['coverArt'] } as any,
+        },
+      });
+      const artwork = ((artData as any)?.included ?? []).find((i: any) => i.type === 'artworks');
+      const files = artwork?.attributes?.files ?? [];
+      // Pick 640x640 or the largest available
+      const preferred = files.find((f: any) => f.meta?.width === 640) ?? files[0];
+      coverUrl = preferred?.href;
+    } catch {}
+  }
+
   const result = {
     id: trackId,
     title: attrs.title ?? 'Unknown',
@@ -49,6 +67,7 @@ export async function getTrackInfo(trackId: string, json: boolean): Promise<void
     key: attrs.key,
     popularity: attrs.popularity,
     explicit: attrs.explicit,
+    coverUrl,
   };
 
   if (json) {
@@ -65,6 +84,7 @@ export async function getTrackInfo(trackId: string, json: boolean): Promise<void
   if (result.key !== undefined) console.log(`  Key: ${result.key}`);
   if (result.popularity !== undefined) console.log(`  Popularity: ${result.popularity}`);
   if (result.explicit !== undefined) console.log(`  Explicit: ${result.explicit}`);
+  if (result.coverUrl) console.log(`  Cover: ${result.coverUrl}`);
   console.log();
 }
 
