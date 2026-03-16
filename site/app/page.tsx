@@ -20,11 +20,22 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-tidal-gray-700 bg-tidal-gray-900 px-4 py-1.5 mb-8">
-              <div className="w-2 h-2 rounded-full bg-tidal-cyan animate-pulse" />
-              <span className="text-xs font-mono text-tidal-gray-300">
-                Open Source CLI for Tidal
-              </span>
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <div className="inline-flex items-center gap-2 rounded-full border border-tidal-gray-700 bg-tidal-gray-900 px-4 py-1.5">
+                <div className="w-2 h-2 rounded-full bg-tidal-cyan animate-pulse" />
+                <span className="text-xs font-mono text-tidal-gray-300">
+                  Open Source CLI for Tidal
+                </span>
+              </div>
+              <a
+                href="#automation"
+                className="inline-flex items-center gap-2 rounded-full border border-ai-pink/30 bg-ai-pink-dim px-4 py-1.5 hover:border-ai-pink/60 transition-colors"
+              >
+                <div className="w-2 h-2 rounded-full bg-ai-pink animate-pulse" />
+                <span className="text-xs font-mono text-ai-pink">
+                  AI Agent Ready
+                </span>
+              </a>
             </div>
 
             <h1 className="text-6xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
@@ -49,7 +60,7 @@ export default function Home() {
                 href="https://clawhub.ai/lucaperret/tidal-cli"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-8 py-3 rounded-lg border border-tidal-cyan/30 text-tidal-cyan font-semibold text-sm hover:border-tidal-cyan transition-colors"
+                className="px-8 py-3 rounded-lg bg-ai-pink/10 border border-ai-pink/30 text-ai-pink font-semibold text-sm hover:bg-ai-pink/20 hover:border-ai-pink transition-colors"
               >
                 Install on ClawHub
               </a>
@@ -207,7 +218,8 @@ export default function Home() {
       </section>
 
       {/* Automation */}
-      <section id="automation" className="py-32 px-6">
+      <section id="automation" className="py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(244,114,182,0.04)_0%,transparent_70%)]" />
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -215,19 +227,20 @@ export default function Home() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <div className="inline-flex items-center gap-2 rounded-full border border-tidal-cyan/20 bg-tidal-cyan/10 px-4 py-1.5 mb-6">
-                <span className="text-xs font-mono text-tidal-cyan">
-                  LLM Ready
+              <div className="inline-flex items-center gap-2 rounded-full border border-ai-pink/30 bg-ai-pink-dim px-4 py-1.5 mb-6">
+                <div className="w-2 h-2 rounded-full bg-ai-pink" />
+                <span className="text-xs font-mono text-ai-pink">
+                  AI Agent Skill
                 </span>
               </div>
               <h2 className="text-4xl font-bold mb-4">
                 Built for
                 <br />
-                AI automation
+                <span className="text-ai-pink">AI automation</span>
               </h2>
               <p className="text-tidal-gray-400 leading-relaxed mb-6">
                 Every command supports{" "}
-                <code className="text-tidal-cyan text-sm bg-tidal-gray-800 px-1.5 py-0.5 rounded">
+                <code className="text-ai-pink text-sm bg-ai-pink-dim px-1.5 py-0.5 rounded">
                   --json
                 </code>{" "}
                 output for machine-readable responses. Available as a skill on{" "}
@@ -235,25 +248,25 @@ export default function Home() {
                 tidal-cli lets LLM agents search, curate playlists, and
                 control playback programmatically.
               </p>
-              <div className="bg-tidal-gray-900 border border-tidal-gray-700 rounded-lg p-4 font-mono text-sm mb-6">
-                <span className="text-tidal-cyan/50 select-none">$ </span>
+              <div className="bg-tidal-gray-900 border border-ai-pink/20 rounded-lg p-4 font-mono text-sm mb-6">
+                <span className="text-ai-pink/50 select-none">$ </span>
                 <span className="text-white">clawhub install tidal-cli</span>
               </div>
               <ul className="space-y-3 text-sm text-tidal-gray-300">
                 <li className="flex items-center gap-3">
-                  <span className="text-tidal-cyan">&#10003;</span>
+                  <span className="text-ai-pink">&#10003;</span>
                   JSON output on every command
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="text-tidal-cyan">&#10003;</span>
+                  <span className="text-ai-pink">&#10003;</span>
                   Non-interactive after initial auth
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="text-tidal-cyan">&#10003;</span>
+                  <span className="text-ai-pink">&#10003;</span>
                   Auto-refreshing tokens
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="text-tidal-cyan">&#10003;</span>
+                  <span className="text-ai-pink">&#10003;</span>
                   <a href="https://clawhub.ai/lucaperret/tidal-cli" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Available on ClawHub</a>
                 </li>
               </ul>
