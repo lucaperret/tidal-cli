@@ -14,7 +14,7 @@ export default function Home() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,255,255,0.06)_0%,transparent_70%)]" />
 
-        <div className="relative max-w-4xl mx-auto px-6 text-center pt-16">
+        <div className="relative max-w-4xl mx-auto px-6 text-center pt-24 md:pt-16">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
