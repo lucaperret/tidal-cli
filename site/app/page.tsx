@@ -218,7 +218,7 @@ export default function Home() {
       </section>
 
       {/* MCP / Claude */}
-      <section className="py-32 px-6 bg-tidal-dark">
+      <section id="claude" className="py-32 px-6 bg-tidal-dark">
         <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0 }}

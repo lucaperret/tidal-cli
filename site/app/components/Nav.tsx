@@ -21,18 +21,16 @@ export function Nav() {
             Install
           </a>
           <a
+            href="#claude"
+            className="text-sm font-medium text-tidal-cyan hover:text-white transition-colors"
+          >
+            Claude
+          </a>
+          <a
             href="#automation"
             className="text-sm text-tidal-gray-400 hover:text-white transition-colors"
           >
             Automation
-          </a>
-          <a
-            href="https://clawhub.ai/lucaperret/tidal-cli"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-medium text-tidal-cyan hover:text-white transition-colors"
-          >
-            ClawHub
           </a>
           <a
             href="https://github.com/lucaperret/tidal-cli"
