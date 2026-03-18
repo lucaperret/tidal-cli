@@ -4,12 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/copy-cli-dist.js",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.2",
     "@tidal-music/api": "^0.9.1",
+    "@tidal-music/auth": "^1.4.0",
     "@tidal-music/common": "^0.2.0",
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",

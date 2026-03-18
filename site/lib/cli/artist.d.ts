@@ -1,0 +1,12 @@
+import type { ArtistInfo, ArtistTrack, ArtistAlbum, SimilarArtist, RadioPlaylist } from './types';
+export type { ArtistInfo, ArtistTrack, ArtistAlbum, SimilarArtist };
+export declare function getArtistInfoData(artistId: string, client: any, countryCode: string): Promise<ArtistInfo>;
+export declare function getArtistInfo(artistId: string, json: boolean): Promise<void>;
+export declare function getArtistRadioData(artistId: string, client: any, countryCode: string): Promise<RadioPlaylist[]>;
+export declare function getArtistRadio(artistId: string, json: boolean): Promise<void>;
+export declare function getArtistTracksData(artistId: string, client: any, countryCode: string): Promise<ArtistTrack[]>;
+export declare function getArtistTracks(artistId: string, json: boolean): Promise<void>;
+export declare function getArtistAlbumsData(artistId: string, client: any, countryCode: string): Promise<ArtistAlbum[]>;
+export declare function getArtistAlbums(artistId: string, json: boolean): Promise<void>;
+export declare function getSimilarArtistsData(artistId: string, client: any, countryCode: string): Promise<SimilarArtist[]>;
+export declare function getSimilarArtists(artistId: string, json: boolean): Promise<void>;

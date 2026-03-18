@@ -2,16 +2,16 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createAPIClient } from '@tidal-music/api';
 
-import { searchData, searchSuggestionsData } from '../../../dist/search';
-import { getArtistInfoData, getArtistTracksData, getArtistAlbumsData, getSimilarArtistsData, getArtistRadioData } from '../../../dist/artist';
-import { getTrackInfoData, getTrackRadioData, getTrackByIsrcData, getSimilarTracksData } from '../../../dist/track';
-import { getAlbumInfoData, getAlbumByBarcodeData } from '../../../dist/album';
-import { listPlaylistsData, createPlaylistData, renamePlaylistData, deletePlaylistData, addTrackToPlaylistData, removeTrackFromPlaylistData, addAlbumToPlaylistData, moveTrackInPlaylistData, updatePlaylistDescriptionData } from '../../../dist/playlist';
-import { addToLibraryData, removeFromLibraryData, listFavoritedPlaylistsData, addPlaylistToFavoritesData, removePlaylistFromFavoritesData } from '../../../dist/library';
-import { playbackInfoData, playbackUrlData } from '../../../dist/playback';
-import { getRecommendationsData } from '../../../dist/recommend';
-import { getRecentlyAddedData } from '../../../dist/history';
-import { getUserProfileData } from '../../../dist/user';
+import { searchData, searchSuggestionsData } from '../../lib/cli/search';
+import { getArtistInfoData, getArtistTracksData, getArtistAlbumsData, getSimilarArtistsData, getArtistRadioData } from '../../lib/cli/artist';
+import { getTrackInfoData, getTrackRadioData, getTrackByIsrcData, getSimilarTracksData } from '../../lib/cli/track';
+import { getAlbumInfoData, getAlbumByBarcodeData } from '../../lib/cli/album';
+import { listPlaylistsData, createPlaylistData, renamePlaylistData, deletePlaylistData, addTrackToPlaylistData, removeTrackFromPlaylistData, addAlbumToPlaylistData, moveTrackInPlaylistData, updatePlaylistDescriptionData } from '../../lib/cli/playlist';
+import { addToLibraryData, removeFromLibraryData, listFavoritedPlaylistsData, addPlaylistToFavoritesData, removePlaylistFromFavoritesData } from '../../lib/cli/library';
+import { playbackInfoData, playbackUrlData } from '../../lib/cli/playback';
+import { getRecommendationsData } from '../../lib/cli/recommend';
+import { getRecentlyAddedData } from '../../lib/cli/history';
+import { getUserProfileData } from '../../lib/cli/user';
 
 import { getTidalTokens, getAccessTokenUserId, saveTidalTokens } from './redis';
 import { refreshTidalToken } from './tidal-oauth';
