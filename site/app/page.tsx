@@ -217,6 +217,78 @@ export default function Home() {
         </div>
       </section>
 
+      {/* MCP / Claude */}
+      <section className="py-32 px-6 bg-tidal-dark">
+        <div className="max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <div className="inline-flex items-center gap-2 rounded-full border border-tidal-cyan/30 bg-tidal-cyan/5 px-4 py-1.5 mb-6">
+              <div className="w-2 h-2 rounded-full bg-tidal-cyan" />
+              <span className="text-xs font-mono text-tidal-cyan">
+                MCP Connector
+              </span>
+            </div>
+            <h2 className="text-4xl font-bold mb-4">
+              Works with <span className="text-tidal-cyan">Claude</span>
+            </h2>
+            <p className="text-tidal-gray-400 text-lg">
+              Connect your Tidal account to Claude Desktop or claude.ai.
+              No install needed — just add the connector URL.
+            </p>
+          </motion.div>
+
+          <div className="space-y-6">
+            <div className="rounded-xl border border-tidal-gray-700 bg-tidal-gray-900 p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-tidal-cyan/10 border border-tidal-cyan/20 flex items-center justify-center text-tidal-cyan font-bold text-lg">1</div>
+                <div>
+                  <p className="text-white font-medium mb-1">Add the connector</p>
+                  <p className="text-tidal-gray-400 text-sm">Settings &rarr; Connectors &rarr; Add custom connector</p>
+                  <div className="mt-3 bg-black/50 rounded-lg p-3 font-mono text-sm text-tidal-cyan select-all">
+                    https://tidal-cli.lucaperret.ch/api/mcp
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-tidal-gray-700 bg-tidal-gray-900 p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-tidal-cyan/10 border border-tidal-cyan/20 flex items-center justify-center text-tidal-cyan font-bold text-lg">2</div>
+                <div>
+                  <p className="text-white font-medium mb-1">Connect your Tidal account</p>
+                  <p className="text-tidal-gray-400 text-sm">Click &ldquo;Connect&rdquo; and sign in with your Tidal credentials. OAuth keeps your password safe.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-tidal-gray-700 bg-tidal-gray-900 p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-tidal-cyan/10 border border-tidal-cyan/20 flex items-center justify-center text-tidal-cyan font-bold text-lg">3</div>
+                <div>
+                  <p className="text-white font-medium mb-1">Ask Claude anything about music</p>
+                  <p className="text-tidal-gray-400 text-sm">32 tools available — search, playlists, library, recommendations, and more.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center">
+            <a
+              href="https://smithery.ai/servers/lucaperret/tidal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-tidal-gray-400 hover:text-tidal-cyan transition-colors"
+            >
+              Also available on Smithery &rarr;
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* AI Prompts */}
       <section className="py-32 px-6">
         <div className="max-w-3xl mx-auto">
@@ -375,10 +447,24 @@ export default function Home() {
               ClawHub
             </a>
             <a
+              href="https://smithery.ai/servers/lucaperret/tidal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-tidal-gray-400 hover:text-white transition-colors"
+            >
+              Smithery
+            </a>
+            <a
               href="/privacy"
               className="text-sm text-tidal-gray-400 hover:text-white transition-colors"
             >
               Privacy
+            </a>
+            <a
+              href="/terms"
+              className="text-sm text-tidal-gray-400 hover:text-white transition-colors"
+            >
+              Terms
             </a>
           </div>
         </div>

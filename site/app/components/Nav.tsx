@@ -7,7 +7,7 @@ export function Nav() {
     <nav className="fixed top-0 w-full z-50 border-b border-tidal-gray-800/50 bg-background/80 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Logo />
-        <div className="flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-6">
           <a
             href="#features"
             className="text-sm text-tidal-gray-400 hover:text-white transition-colors"
@@ -43,6 +43,14 @@ export function Nav() {
             GitHub
           </a>
         </div>
+        <a
+          href="https://github.com/lucaperret/tidal-cli"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="md:hidden text-sm text-tidal-gray-400 hover:text-white transition-colors"
+        >
+          GitHub
+        </a>
       </div>
     </nav>
   );
