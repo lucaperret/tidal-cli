@@ -70,10 +70,11 @@ Remote MCP server hosted in `site/` (Next.js on Vercel) for Claude Connectors Di
 
 - **Transport**: Streamable HTTP via `mcp-handler` at `/api/mcp`
 - **Auth**: Double OAuth — server for MCP clients (Claude) + client for Tidal API
-- **Tokens**: Per-user Tidal tokens in Upstash Redis (env vars: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
+- **Tokens**: Per-user Tidal tokens in Upstash Redis (env vars: `KV_REST_API_URL`, `KV_REST_API_TOKEN`)
 - **Tools**: 32 tools with safety annotations (`readOnlyHint`, `destructiveHint`)
-- **Imports**: Tools import from compiled `dist/` (not `src/`) to avoid CJS/ESM mismatch with Turbopack
-- **Build dependency**: Run `npm run build` in root before building site
+- **Prompts**: 3 MCP prompt templates (search_artist, create_playlist, discover_similar)
+- **Imports**: Tools import from `site/lib/cli/` (compiled JS copied from `dist/` via prebuild script)
+- **Build dependency**: Run `npm run build` in root, then `node site/scripts/copy-cli-dist.js` to sync lib/cli/
 
 ## Don't
 
@@ -96,7 +97,10 @@ This triggers `.github/workflows/release.yml` which automatically:
 3. Publishes to ClawHub via `CLAWHUB_TOKEN` secret
 4. Creates a GitHub Release with auto-generated notes
 
-After release, update the local install: `npm run build && npm install -g .`
+After release:
+1. Update local install: `npm run build && npm install -g .`
+2. Sync MCP lib: `node site/scripts/copy-cli-dist.js` then commit `site/lib/cli/` changes
+3. Re-publish on Smithery: go to https://smithery.ai/servers/lucaperret/tidal → Releases → Publish (Smithery will re-scan tools/prompts after deploy)
 
 The npm package is `@lucaperret/tidal-cli` (scope matches GitHub owner for Trusted Publishing). The old `@lucanova/tidal-cli` is deprecated.
 
@@ -107,6 +111,8 @@ The npm package is `@lucaperret/tidal-cli` (scope matches GitHub owner for Trust
 | npm | https://www.npmjs.com/package/@lucaperret/tidal-cli |
 | GitHub | https://github.com/lucaperret/tidal-cli |
 | ClawHub | https://clawhub.ai/lucaperret/tidal-cli |
+| Smithery | https://smithery.ai/servers/lucaperret/tidal |
+| MCP | https://tidal-cli.lucaperret.ch/api/mcp |
 | Site | https://tidal-cli.lucaperret.ch |
 
 ## Related

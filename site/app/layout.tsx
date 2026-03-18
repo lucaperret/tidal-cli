@@ -103,6 +103,9 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <head>
         <link rel="canonical" href="https://tidal-cli.lucaperret.ch/" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

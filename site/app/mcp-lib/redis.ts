@@ -5,8 +5,8 @@ let redis: Redis | null = null;
 function getRedis(): Redis {
   if (!redis) {
     redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_KV_REST_API_URL!,
-      token: process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN!,
+      url: process.env.KV_REST_API_URL!,
+      token: process.env.KV_REST_API_TOKEN!,
     });
   }
   return redis;

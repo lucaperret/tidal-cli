@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
   const isAllowed =
     url.hostname === 'claude.ai' ||
     url.hostname === 'claude.com' ||
+    url.hostname === 'api.smithery.ai' ||
     url.hostname === 'localhost' ||
     url.hostname === '127.0.0.1';
   if (!isAllowed) {

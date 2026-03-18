@@ -8,6 +8,7 @@
 
 [![npm](https://img.shields.io/npm/v/@lucaperret/tidal-cli)](https://www.npmjs.com/package/@lucaperret/tidal-cli)
 [![CI](https://img.shields.io/github/actions/workflow/status/lucaperret/tidal-cli/ci.yml?label=tests)](https://github.com/lucaperret/tidal-cli/actions)
+[![smithery badge](https://smithery.ai/badge/lucaperret/tidal)](https://smithery.ai/servers/lucaperret/tidal)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-green.svg)](https://nodejs.org)
 
@@ -148,9 +149,20 @@ tidal-cli --json playlist list
 tidal-cli --json artist similar 8992
 ```
 
+## MCP Server (Claude Integration)
+
+tidal-cli is available as a remote MCP server for [Claude Desktop](https://claude.ai), [Smithery](https://smithery.ai/servers/lucaperret/tidal), and any MCP-compatible client.
+
+**Connect in Claude Desktop:**
+1. Settings → Connectors → Add custom connector
+2. Enter: `https://tidal-cli.lucaperret.ch/api/mcp`
+3. Click "Connect" → log in to Tidal → done
+
+32 tools with OAuth authentication, safety annotations, and 3 prompt templates.
+
 ## Agent Automation
 
-tidal-cli is available as an [OpenClaw](https://openclaw.ai) skill on [ClawHub](https://clawhub.ai/lucaperret/tidal-cli). Install it for your AI agent:
+tidal-cli is also available as an [OpenClaw](https://openclaw.ai) skill on [ClawHub](https://clawhub.ai/lucaperret/tidal-cli). Install it for your AI agent:
 
 ```bash
 clawhub install tidal-cli
