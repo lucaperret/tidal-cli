@@ -1,13 +1,6 @@
 import { getApiClient, getCountryCode } from './auth';
-
-type SearchType = 'artist' | 'album' | 'track' | 'video' | 'playlist';
-
-interface SearchResult {
-  id: string;
-  type: string;
-  name: string;
-  extra?: Record<string, unknown>;
-}
+import type { SearchType, SearchResult, SearchSuggestionsResult } from './types';
+export type { SearchType, SearchResult, SearchSuggestionsResult };
 
 function formatDuration(isoDuration: string | undefined): string {
   if (!isoDuration) return '';
@@ -20,9 +13,7 @@ function formatDuration(isoDuration: string | undefined): string {
   return `${h}${m}:${s}`;
 }
 
-export async function search(type: SearchType, query: string, json: boolean): Promise<void> {
-  const client = await getApiClient();
-
+export async function searchData(type: SearchType, query: string, client: any, countryCode: string): Promise<SearchResult[]> {
   const includeMap: Record<SearchType, string> = {
     artist: 'artists',
     album: 'albums',
@@ -35,15 +26,14 @@ export async function search(type: SearchType, query: string, json: boolean): Pr
     params: {
       path: { id: query },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         include: [includeMap[type] as any],
       },
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Search failed — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Search failed — ${JSON.stringify(error)}`);
   }
 
   const included = data.included ?? [];
@@ -119,46 +109,57 @@ export async function search(type: SearchType, query: string, json: boolean): Pr
     });
   }
 
-  if (json) {
-    console.log(JSON.stringify(results, null, 2));
-    return;
-  }
-
-  if (results.length === 0) {
-    console.log(`No ${type}s found for "${query}".`);
-    return;
-  }
-
-  const typeLabel = type === 'playlist' ? 'playlists' : `${type}s`;
-  console.log(`\nSearch results for "${query}" (${typeLabel}):\n`);
-  for (const r of results) {
-    const extras = r.extra
-      ? Object.entries(r.extra)
-          .filter(([, v]) => v !== undefined && v !== null)
-          .map(([k, v]) => `${k}: ${v}`)
-          .join(', ')
-      : '';
-    console.log(`  [${r.id}] ${r.name}${extras ? ` (${extras})` : ''}`);
-  }
-  console.log();
+  return results;
 }
 
-export async function searchSuggestions(query: string, json: boolean): Promise<void> {
+export async function search(type: SearchType, query: string, json: boolean): Promise<void> {
   const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
+  try {
+    const results = await searchData(type, query, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(results, null, 2));
+      return;
+    }
+
+    if (results.length === 0) {
+      console.log(`No ${type}s found for "${query}".`);
+      return;
+    }
+
+    const typeLabel = type === 'playlist' ? 'playlists' : `${type}s`;
+    console.log(`\nSearch results for "${query}" (${typeLabel}):\n`);
+    for (const r of results) {
+      const extras = r.extra
+        ? Object.entries(r.extra)
+            .filter(([, v]) => v !== undefined && v !== null)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join(', ')
+        : '';
+      console.log(`  [${r.id}] ${r.name}${extras ? ` (${extras})` : ''}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function searchSuggestionsData(query: string, client: any, countryCode: string): Promise<SearchSuggestionsResult> {
   const { data, error } = await client.GET('/searchSuggestions/{id}' as any, {
     params: {
       path: { id: query },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         include: ['directHits'] as any,
       } as any,
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get search suggestions — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get search suggestions — ${JSON.stringify(error)}`);
   }
 
   const attrs = (data as any).data?.attributes ?? {};
@@ -174,30 +175,42 @@ export async function searchSuggestions(query: string, json: boolean): Promise<v
     };
   });
 
-  const result = { suggestions, directHits };
+  return { suggestions, directHits };
+}
 
-  if (json) {
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
+export async function searchSuggestions(query: string, json: boolean): Promise<void> {
+  const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
-  if (suggestions.length > 0) {
-    console.log(`\nSuggestions for "${query}":\n`);
-    for (const s of suggestions) {
-      console.log(`  ${s}`);
+  try {
+    const result = await searchSuggestionsData(query, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
     }
-  }
 
-  if (directHits.length > 0) {
-    console.log(`\nDirect hits:\n`);
-    for (const h of directHits) {
-      console.log(`  [${h.id}] (${h.type}) ${h.name}`);
+    if (result.suggestions.length > 0) {
+      console.log(`\nSuggestions for "${query}":\n`);
+      for (const s of result.suggestions) {
+        console.log(`  ${s}`);
+      }
     }
-  }
 
-  if (suggestions.length === 0 && directHits.length === 0) {
-    console.log(`No suggestions found for "${query}".`);
-  }
+    if (result.directHits.length > 0) {
+      console.log(`\nDirect hits:\n`);
+      for (const h of result.directHits) {
+        console.log(`  [${h.id}] (${h.type}) ${h.name}`);
+      }
+    }
 
-  console.log();
+    if (result.suggestions.length === 0 && result.directHits.length === 0) {
+      console.log(`No suggestions found for "${query}".`);
+    }
+
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
 }

@@ -1,6 +1,6 @@
 import { getApiClient, getCountryCode } from './auth';
-
-type RecentType = 'tracks' | 'albums' | 'artists';
+import type { RecentItem, RecentType } from './types';
+export type { RecentItem, RecentType };
 
 const endpointMap: Record<RecentType, string> = {
   tracks: '/userCollectionTracks/{id}/relationships/items',
@@ -14,10 +14,7 @@ const includeTypeMap: Record<RecentType, string> = {
   artists: 'artists',
 };
 
-export async function getRecentlyAdded(type: RecentType, json: boolean): Promise<void> {
-  const client = await getApiClient();
-  const countryCode = await getCountryCode();
-
+export async function getRecentlyAddedData(type: RecentType, client: any, countryCode: string): Promise<RecentItem[]> {
   const { data, error } = await (client as any).GET(endpointMap[type], {
     params: {
       path: { id: 'me' },
@@ -30,8 +27,7 @@ export async function getRecentlyAdded(type: RecentType, json: boolean): Promise
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get recently added ${type} — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get recently added ${type} — ${JSON.stringify(error)}`);
   }
 
   const included = (data as any).included ?? [];
@@ -58,20 +54,34 @@ export async function getRecentlyAdded(type: RecentType, json: boolean): Promise
     }
   }
 
-  if (json) {
-    console.log(JSON.stringify(items, null, 2));
-    return;
-  }
+  return items;
+}
 
-  if (items.length === 0) {
-    console.log(`No recently added ${type} found.`);
-    return;
-  }
+export async function getRecentlyAdded(type: RecentType, json: boolean): Promise<void> {
+  const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
-  console.log(`\nRecently added ${type}:\n`);
-  for (const item of items) {
-    const date = item.addedAt ? ` (added: ${item.addedAt})` : '';
-    console.log(`  [${item.id}] ${item.name}${date}`);
+  try {
+    const items = await getRecentlyAddedData(type, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(items, null, 2));
+      return;
+    }
+
+    if (items.length === 0) {
+      console.log(`No recently added ${type} found.`);
+      return;
+    }
+
+    console.log(`\nRecently added ${type}:\n`);
+    for (const item of items) {
+      const date = item.addedAt ? ` (added: ${item.addedAt})` : '';
+      console.log(`  [${item.id}] ${item.name}${date}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
   }
-  console.log();
 }

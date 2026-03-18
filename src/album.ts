@@ -1,4 +1,6 @@
 import { getApiClient, getCountryCode } from './auth';
+import type { AlbumInfo, AlbumResult } from './types';
+export type { AlbumInfo, AlbumResult };
 
 function formatDuration(isoDuration: string | undefined): string {
   if (!isoDuration) return '';
@@ -10,22 +12,19 @@ function formatDuration(isoDuration: string | undefined): string {
   return `${h}${m}:${s}`;
 }
 
-export async function getAlbumInfo(albumId: string, json: boolean): Promise<void> {
-  const client = await getApiClient();
-
+export async function getAlbumInfoData(albumId: string, client: any, countryCode: string): Promise<AlbumInfo> {
   const { data, error } = await client.GET('/albums/{id}', {
     params: {
       path: { id: albumId },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         include: ['artists', 'coverArt'] as any,
       },
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get album info — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get album info — ${JSON.stringify(error)}`);
   }
 
   const attrs = (data as any).data?.attributes ?? {};
@@ -35,13 +34,12 @@ export async function getAlbumInfo(albumId: string, json: boolean): Promise<void
     .filter((item: any) => item.type === 'artists')
     .map((item: any) => item.attributes?.name ?? item.id);
 
-  // Get cover art from included artworks
   const artwork = included.find((item: any) => item.type === 'artworks');
   const files = artwork?.attributes?.files ?? [];
   const preferred = files.find((f: any) => f.meta?.width === 640) ?? files[0];
   const coverUrl = preferred?.href;
 
-  const result = {
+  return {
     id: albumId,
     title: attrs.title ?? 'Unknown',
     artists,
@@ -54,44 +52,53 @@ export async function getAlbumInfo(albumId: string, json: boolean): Promise<void
     barcodeId: attrs.barcodeId,
     coverUrl,
   };
-
-  if (json) {
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
-
-  console.log(`\nAlbum: [${result.id}] ${result.title}`);
-  if (result.artists.length > 0) console.log(`  Artists: ${result.artists.join(', ')}`);
-  if (result.albumType) console.log(`  Type: ${result.albumType}`);
-  if (result.releaseDate) console.log(`  Release Date: ${result.releaseDate}`);
-  if (result.numberOfItems !== undefined) console.log(`  Tracks: ${result.numberOfItems}`);
-  if (result.duration) console.log(`  Duration: ${result.duration}`);
-  if (result.popularity !== undefined) console.log(`  Popularity: ${result.popularity}`);
-  if (result.explicit !== undefined) console.log(`  Explicit: ${result.explicit}`);
-  if (result.barcodeId) console.log(`  Barcode: ${result.barcodeId}`);
-  if (result.coverUrl) console.log(`  Cover: ${result.coverUrl}`);
-  console.log();
 }
 
-export async function getAlbumByBarcode(barcode: string, json: boolean): Promise<void> {
+export async function getAlbumInfo(albumId: string, json: boolean): Promise<void> {
   const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
+  try {
+    const result = await getAlbumInfoData(albumId, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\nAlbum: [${result.id}] ${result.title}`);
+    if (result.artists.length > 0) console.log(`  Artists: ${result.artists.join(', ')}`);
+    if (result.albumType) console.log(`  Type: ${result.albumType}`);
+    if (result.releaseDate) console.log(`  Release Date: ${result.releaseDate}`);
+    if (result.numberOfItems !== undefined) console.log(`  Tracks: ${result.numberOfItems}`);
+    if (result.duration) console.log(`  Duration: ${result.duration}`);
+    if (result.popularity !== undefined) console.log(`  Popularity: ${result.popularity}`);
+    if (result.explicit !== undefined) console.log(`  Explicit: ${result.explicit}`);
+    if (result.barcodeId) console.log(`  Barcode: ${result.barcodeId}`);
+    if (result.coverUrl) console.log(`  Cover: ${result.coverUrl}`);
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function getAlbumByBarcodeData(barcode: string, client: any, countryCode: string): Promise<AlbumResult[]> {
   const { data, error } = await client.GET('/albums' as any, {
     params: {
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         'filter[barcodeId]': [barcode] as any,
       } as any,
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get album by barcode — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get album by barcode — ${JSON.stringify(error)}`);
   }
 
   const items = (data as any).data ?? [];
-  const albums = items.map((item: any) => {
+  return items.map((item: any) => {
     const attrs = item.attributes as any;
     return {
       id: item.id,
@@ -103,23 +110,35 @@ export async function getAlbumByBarcode(barcode: string, json: boolean): Promise
       barcodeId: attrs?.barcodeId,
     };
   });
+}
 
-  if (json) {
-    console.log(JSON.stringify(albums, null, 2));
-    return;
-  }
+export async function getAlbumByBarcode(barcode: string, json: boolean): Promise<void> {
+  const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
-  if (albums.length === 0) {
-    console.log(`No albums found for barcode ${barcode}.`);
-    return;
-  }
+  try {
+    const albums = await getAlbumByBarcodeData(barcode, client, countryCode);
 
-  console.log(`\nAlbums matching barcode ${barcode}:\n`);
-  for (const a of albums) {
-    const extras = [a.albumType, a.releaseDate, a.numberOfItems !== undefined ? `${a.numberOfItems} tracks` : undefined]
-      .filter(Boolean)
-      .join(', ');
-    console.log(`  [${a.id}] ${a.title}${extras ? ` (${extras})` : ''}`);
+    if (json) {
+      console.log(JSON.stringify(albums, null, 2));
+      return;
+    }
+
+    if (albums.length === 0) {
+      console.log(`No albums found for barcode ${barcode}.`);
+      return;
+    }
+
+    console.log(`\nAlbums matching barcode ${barcode}:\n`);
+    for (const a of albums) {
+      const extras = [a.albumType, a.releaseDate, a.numberOfItems !== undefined ? `${a.numberOfItems} tracks` : undefined]
+        .filter(Boolean)
+        .join(', ');
+      console.log(`  [${a.id}] ${a.title}${extras ? ` (${extras})` : ''}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
   }
-  console.log();
 }

@@ -3,6 +3,8 @@ import { exec } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import type { PlaybackInfo, PlaybackUrl } from './types';
+export type { PlaybackInfo, PlaybackUrl };
 
 type AudioQuality = 'LOW' | 'HIGH' | 'LOSSLESS' | 'HI_RES';
 
@@ -40,8 +42,7 @@ function parseDataUri(dataUri: string): { mimeType: string; data: string } {
   return { mimeType: match[1], data: match[2] };
 }
 
-async function fetchTrackManifest(trackId: string, quality: string): Promise<TrackManifestResult> {
-  const client = await getApiClient();
+async function fetchTrackManifestData(trackId: string, quality: string, client: any): Promise<TrackManifestResult> {
   const formats = qualityToFormats[quality as AudioQuality] ?? qualityToFormats.HIGH;
 
   const { data, error } = await client.GET('/trackManifests/{id}', {
@@ -58,14 +59,12 @@ async function fetchTrackManifest(trackId: string, quality: string): Promise<Tra
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get track manifest — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get track manifest — ${JSON.stringify(error)}`);
   }
 
   const attrs = (data as any).data?.attributes;
   if (!attrs?.uri) {
-    console.error('Error: No manifest URI in response.');
-    process.exit(1);
+    throw new Error('No manifest URI in response.');
   }
 
   const { mimeType, data: manifestBase64 } = parseDataUri(attrs.uri);
@@ -83,6 +82,12 @@ async function fetchTrackManifest(trackId: string, quality: string): Promise<Tra
     albumReplayGain: attrs.albumAudioNormalizationData?.replayGain ?? 0,
     albumPeakAmplitude: attrs.albumAudioNormalizationData?.peakAmplitude ?? 0,
   };
+}
+
+// Keep backward-compatible internal helper
+async function fetchTrackManifest(trackId: string, quality: string): Promise<TrackManifestResult> {
+  const client = await getApiClient();
+  return fetchTrackManifestData(trackId, quality, client);
 }
 
 interface DashSegments {
@@ -117,7 +122,6 @@ function decodeManifest(base64Manifest: string, mimeType: string): StreamInfo {
     const mediaMatch = decoded.match(/media="([^"]+)"/);
     const codecsMatch = decoded.match(/codecs="([^"]+)"/);
 
-    // Parse segment timeline: <S d="176128" r="6"/> means 7 segments, <S d="89088"/> means 1
     const segmentDurations: number[] = [];
     const sMatches = decoded.matchAll(/<S d="(\d+)"(?:\s+r="(\d+)")?\/>/g);
     let segNum = 1;
@@ -140,7 +144,6 @@ function decodeManifest(base64Manifest: string, mimeType: string): StreamInfo {
       };
     }
 
-    // Fallback: try BaseURL
     const baseUrlMatch = decoded.match(/<BaseURL>([^<]+)<\/BaseURL>/);
     if (baseUrlMatch) {
       return { type: 'direct', url: baseUrlMatch[1], codecs: codecsMatch?.[1] };
@@ -151,12 +154,10 @@ function decodeManifest(base64Manifest: string, mimeType: string): StreamInfo {
 }
 
 async function downloadDashStream(dash: DashSegments): Promise<Buffer> {
-  // Download init segment
   const initRes = await fetch(dash.initUrl);
   if (!initRes.ok) throw new Error(`Failed to download init segment (${initRes.status})`);
   const initBuf = Buffer.from(await initRes.arrayBuffer());
 
-  // Download media segments
   const segBuffers: Buffer[] = [initBuf];
   for (const segNum of dash.segments) {
     const segUrl = dash.mediaTemplate.replace('$Number$', String(segNum));
@@ -168,10 +169,10 @@ async function downloadDashStream(dash: DashSegments): Promise<Buffer> {
   return Buffer.concat(segBuffers);
 }
 
-export async function playbackInfo(trackId: string, quality: string, json: boolean): Promise<void> {
-  const info = await fetchTrackManifest(trackId, quality);
+export async function playbackInfoData(trackId: string, quality: string, client: any): Promise<PlaybackInfo> {
+  const info = await fetchTrackManifestData(trackId, quality, client);
 
-  const result = {
+  return {
     trackId: info.trackId,
     presentation: info.trackPresentation,
     previewReason: info.previewReason,
@@ -183,50 +184,74 @@ export async function playbackInfo(trackId: string, quality: string, json: boole
     albumReplayGain: info.albumReplayGain,
     albumPeakAmplitude: info.albumPeakAmplitude,
   };
-
-  if (json) {
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
-
-  console.log(`\nPlayback info for track ${trackId}:\n`);
-  console.log(`  Quality:        ${result.audioQuality}`);
-  console.log(`  Formats:        ${result.formats.join(', ')}`);
-  console.log(`  Presentation:   ${result.presentation}`);
-  if (result.previewReason) {
-    console.log(`  Preview reason: ${result.previewReason}`);
-  }
-  console.log(`  Manifest type:  ${result.manifestMimeType}`);
-  console.log(`  Track gain:     ${result.trackReplayGain} dB`);
-  console.log(`  Album gain:     ${result.albumReplayGain} dB`);
-  console.log();
 }
 
-export async function playbackUrl(trackId: string, quality: string, json: boolean): Promise<void> {
-  const info = await fetchTrackManifest(trackId, quality);
+export async function playbackInfo(trackId: string, quality: string, json: boolean): Promise<void> {
+  const client = await getApiClient();
+
+  try {
+    const result = await playbackInfoData(trackId, quality, client);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\nPlayback info for track ${trackId}:\n`);
+    console.log(`  Quality:        ${result.audioQuality}`);
+    console.log(`  Formats:        ${result.formats?.join(', ')}`);
+    console.log(`  Presentation:   ${result.presentation}`);
+    if (result.previewReason) {
+      console.log(`  Preview reason: ${result.previewReason}`);
+    }
+    console.log(`  Manifest type:  ${result.manifestMimeType}`);
+    console.log(`  Track gain:     ${result.trackReplayGain} dB`);
+    console.log(`  Album gain:     ${result.albumReplayGain} dB`);
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function playbackUrlData(trackId: string, quality: string, client: any): Promise<PlaybackUrl> {
+  const info = await fetchTrackManifestData(trackId, quality, client);
   const stream = decodeManifest(info.manifest, info.manifestMimeType);
 
   if (stream.type === 'direct') {
-    if (json) {
-      console.log(JSON.stringify({ trackId: info.trackId, url: stream.url, audioQuality: info.audioQuality }, null, 2));
-    } else {
-      console.log(stream.url);
-    }
+    return { trackId: info.trackId, url: stream.url, audioQuality: info.audioQuality, type: 'direct' };
   } else if (stream.dash) {
+    return {
+      trackId: info.trackId,
+      type: 'dash',
+      initUrl: stream.dash.initUrl,
+      segmentCount: stream.dash.segments.length,
+      audioQuality: info.audioQuality,
+    };
+  }
+
+  throw new Error('No stream URL available for this track.');
+}
+
+export async function playbackUrl(trackId: string, quality: string, json: boolean): Promise<void> {
+  const client = await getApiClient();
+
+  try {
+    const result = await playbackUrlData(trackId, quality, client);
+
     if (json) {
-      console.log(JSON.stringify({
-        trackId: info.trackId,
-        type: 'dash',
-        initUrl: stream.dash.initUrl,
-        segmentCount: stream.dash.segments.length,
-        audioQuality: info.audioQuality,
-      }, null, 2));
-    } else {
-      console.log(`DASH stream (${stream.dash.segments.length} segments)`);
-      console.log(`  Init: ${stream.dash.initUrl}`);
+      console.log(JSON.stringify(result, null, 2));
+      return;
     }
-  } else {
-    console.error('Error: No stream URL available for this track.');
+
+    if (result.type === 'direct') {
+      console.log(result.url);
+    } else {
+      console.log(`DASH stream (${result.segmentCount} segments)`);
+      console.log(`  Init: ${result.initUrl}`);
+    }
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
     process.exit(1);
   }
 }
@@ -235,7 +260,6 @@ export async function playbackPlay(trackId: string, quality: string): Promise<vo
   const info = await fetchTrackManifest(trackId, quality);
   const stream = decodeManifest(info.manifest, info.manifestMimeType);
 
-  // Determine file extension from format
   const isFlac = info.formats.includes('FLAC') || info.formats.includes('FLAC_HIRES');
   const ext = isFlac ? '.flac' : '.mp4';
   const tmpFile = path.join(os.tmpdir(), `tidal-${trackId}${ext}`);

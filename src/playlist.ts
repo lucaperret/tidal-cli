@@ -1,32 +1,22 @@
 import { getApiClient, getCountryCode } from './auth';
+import type { PlaylistInfo } from './types';
+export type { PlaylistInfo };
 
-interface PlaylistInfo {
-  id: string;
-  name: string;
-  description?: string;
-  numberOfItems?: number;
-  createdAt?: string;
-  lastModifiedAt?: string;
-}
-
-export async function listPlaylists(json: boolean): Promise<void> {
-  const client = await getApiClient();
-
+export async function listPlaylistsData(client: any, countryCode: string): Promise<PlaylistInfo[]> {
   const { data, error } = await client.GET('/playlists', {
     params: {
       query: {
         'filter[owners.id]': ['me'] as any,
-        countryCode: await getCountryCode(),
+        countryCode,
       },
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to list playlists — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to list playlists — ${JSON.stringify(error)}`);
   }
 
-  const playlists: PlaylistInfo[] = ((data as any).data ?? []).map((p: any) => ({
+  return ((data as any).data ?? []).map((p: any) => ({
     id: p.id,
     name: p.attributes?.name ?? 'Untitled',
     description: p.attributes?.description,
@@ -34,28 +24,38 @@ export async function listPlaylists(json: boolean): Promise<void> {
     createdAt: p.attributes?.createdAt,
     lastModifiedAt: p.attributes?.lastModifiedAt,
   }));
-
-  if (json) {
-    console.log(JSON.stringify(playlists, null, 2));
-    return;
-  }
-
-  if (playlists.length === 0) {
-    console.log('No playlists found.');
-    return;
-  }
-
-  console.log('\nYour playlists:\n');
-  for (const p of playlists) {
-    console.log(`  [${p.id}] ${p.name} (${p.numberOfItems ?? 0} tracks)`);
-    if (p.description) console.log(`    ${p.description}`);
-  }
-  console.log();
 }
 
-export async function createPlaylist(name: string, description: string, json: boolean): Promise<void> {
+export async function listPlaylists(json: boolean): Promise<void> {
   const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
+  try {
+    const playlists = await listPlaylistsData(client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(playlists, null, 2));
+      return;
+    }
+
+    if (playlists.length === 0) {
+      console.log('No playlists found.');
+      return;
+    }
+
+    console.log('\nYour playlists:\n');
+    for (const p of playlists) {
+      console.log(`  [${p.id}] ${p.name} (${p.numberOfItems ?? 0} tracks)`);
+      if (p.description) console.log(`    ${p.description}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function createPlaylistData(name: string, description: string, client: any): Promise<{ id: string; name: string; description: string }> {
   const { data, error } = await client.POST('/playlists', {
     body: {
       data: {
@@ -70,28 +70,36 @@ export async function createPlaylist(name: string, description: string, json: bo
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to create playlist — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to create playlist — ${JSON.stringify(error)}`);
   }
 
   const created = (data as any).data;
-  const result = {
+  return {
     id: created.id,
     name: created.attributes?.name ?? name,
     description: created.attributes?.description ?? description,
   };
-
-  if (json) {
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
-
-  console.log(`\nPlaylist created: [${result.id}] ${result.name}`);
 }
 
-export async function renamePlaylist(playlistId: string, name: string, json: boolean): Promise<void> {
+export async function createPlaylist(name: string, description: string, json: boolean): Promise<void> {
   const client = await getApiClient();
 
+  try {
+    const result = await createPlaylistData(name, description, client);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\nPlaylist created: [${result.id}] ${result.name}`);
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function renamePlaylistData(playlistId: string, name: string, client: any): Promise<{ id: string; name: string; success: boolean }> {
   const { error } = await client.PATCH('/playlists/{id}', {
     params: { path: { id: playlistId } },
     body: {
@@ -104,41 +112,61 @@ export async function renamePlaylist(playlistId: string, name: string, json: boo
   });
 
   if (error) {
-    console.error(`Error: Failed to rename playlist — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to rename playlist — ${JSON.stringify(error)}`);
   }
 
-  if (json) {
-    console.log(JSON.stringify({ id: playlistId, name, success: true }, null, 2));
-    return;
-  }
-
-  console.log(`\nPlaylist ${playlistId} renamed to "${name}".`);
+  return { id: playlistId, name, success: true };
 }
 
-export async function deletePlaylist(playlistId: string, json: boolean): Promise<void> {
+export async function renamePlaylist(playlistId: string, name: string, json: boolean): Promise<void> {
   const client = await getApiClient();
 
+  try {
+    const result = await renamePlaylistData(playlistId, name, client);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\nPlaylist ${playlistId} renamed to "${name}".`);
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function deletePlaylistData(playlistId: string, client: any): Promise<{ id: string; deleted: boolean }> {
   const { error } = await client.DELETE('/playlists/{id}', {
     params: { path: { id: playlistId } },
   });
 
   if (error) {
-    console.error(`Error: Failed to delete playlist — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to delete playlist — ${JSON.stringify(error)}`);
   }
 
-  if (json) {
-    console.log(JSON.stringify({ id: playlistId, deleted: true }, null, 2));
-    return;
-  }
-
-  console.log(`\nPlaylist ${playlistId} deleted.`);
+  return { id: playlistId, deleted: true };
 }
 
-export async function addTrackToPlaylist(playlistId: string, trackId: string, json: boolean): Promise<void> {
+export async function deletePlaylist(playlistId: string, json: boolean): Promise<void> {
   const client = await getApiClient();
 
+  try {
+    const result = await deletePlaylistData(playlistId, client);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\nPlaylist ${playlistId} deleted.`);
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function addTrackToPlaylistData(playlistId: string, trackId: string, client: any): Promise<{ playlistId: string; trackId: string; added: boolean }> {
   const { error } = await client.POST('/playlists/{id}/relationships/items' as any, {
     params: { path: { id: playlistId } },
     body: {
@@ -147,36 +175,43 @@ export async function addTrackToPlaylist(playlistId: string, trackId: string, js
   });
 
   if (error) {
-    console.error(`Error: Failed to add track — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to add track — ${JSON.stringify(error)}`);
   }
 
-  if (json) {
-    console.log(JSON.stringify({ playlistId, trackId, added: true }, null, 2));
-    return;
-  }
-
-  console.log(`\nTrack ${trackId} added to playlist ${playlistId}.`);
+  return { playlistId, trackId, added: true };
 }
 
-export async function removeTrackFromPlaylist(playlistId: string, trackId: string, json: boolean): Promise<void> {
+export async function addTrackToPlaylist(playlistId: string, trackId: string, json: boolean): Promise<void> {
   const client = await getApiClient();
 
-  // Get playlist items to find the item index (required by the API)
+  try {
+    const result = await addTrackToPlaylistData(playlistId, trackId, client);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\nTrack ${trackId} added to playlist ${playlistId}.`);
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function removeTrackFromPlaylistData(playlistId: string, trackId: string, client: any): Promise<{ playlistId: string; trackId: string; removed: boolean }> {
   const { data: itemsData, error: itemsError } = await client.GET('/playlists/{id}/relationships/items' as any, {
     params: { path: { id: playlistId } },
   });
 
   if (itemsError || !itemsData) {
-    console.error(`Error: Failed to get playlist items — ${JSON.stringify(itemsError)}`);
-    process.exit(1);
+    throw new Error(`Failed to get playlist items — ${JSON.stringify(itemsError)}`);
   }
 
   const items = (itemsData as any).data ?? [];
   const item = items.find((i: any) => i.id === trackId);
   if (!item) {
-    console.error(`Error: Track ${trackId} not found in playlist ${playlistId}.`);
-    process.exit(1);
+    throw new Error(`Track ${trackId} not found in playlist ${playlistId}.`);
   }
 
   const { error } = await client.DELETE('/playlists/{id}/relationships/items' as any, {
@@ -187,43 +222,49 @@ export async function removeTrackFromPlaylist(playlistId: string, trackId: strin
   });
 
   if (error) {
-    console.error(`Error: Failed to remove track — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to remove track — ${JSON.stringify(error)}`);
   }
 
-  if (json) {
-    console.log(JSON.stringify({ playlistId, trackId, removed: true }, null, 2));
-    return;
-  }
-
-  console.log(`\nTrack ${trackId} removed from playlist ${playlistId}.`);
+  return { playlistId, trackId, removed: true };
 }
 
-export async function addAlbumToPlaylist(playlistId: string, albumId: string, json: boolean): Promise<void> {
+export async function removeTrackFromPlaylist(playlistId: string, trackId: string, json: boolean): Promise<void> {
   const client = await getApiClient();
 
-  // First get album tracks
+  try {
+    const result = await removeTrackFromPlaylistData(playlistId, trackId, client);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\nTrack ${trackId} removed from playlist ${playlistId}.`);
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function addAlbumToPlaylistData(playlistId: string, albumId: string, client: any, countryCode: string): Promise<{ playlistId: string; albumId: string; tracksAdded: number }> {
   const { data: albumData, error: albumError } = await client.GET('/albums/{id}', {
     params: {
       path: { id: albumId },
-      query: { countryCode: await getCountryCode(), include: ['items'] as any },
+      query: { countryCode, include: ['items'] as any },
     },
   });
 
   if (albumError || !albumData) {
-    console.error(`Error: Failed to get album — ${JSON.stringify(albumError)}`);
-    process.exit(1);
+    throw new Error(`Failed to get album — ${JSON.stringify(albumError)}`);
   }
 
-  // Extract track IDs from included items
   const included = (albumData as any).included ?? [];
   const trackIds = included
     .filter((item: any) => item.type === 'tracks')
     .map((item: any) => ({ id: item.id, type: 'tracks' }));
 
   if (trackIds.length === 0) {
-    console.error('Error: No tracks found in album.');
-    process.exit(1);
+    throw new Error('No tracks found in album.');
   }
 
   const { error } = await client.POST('/playlists/{id}/relationships/items' as any, {
@@ -232,47 +273,54 @@ export async function addAlbumToPlaylist(playlistId: string, albumId: string, js
   });
 
   if (error) {
-    console.error(`Error: Failed to add album tracks — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to add album tracks — ${JSON.stringify(error)}`);
   }
 
-  if (json) {
-    console.log(JSON.stringify({ playlistId, albumId, tracksAdded: trackIds.length }, null, 2));
-    return;
-  }
-
-  console.log(`\n${trackIds.length} tracks from album ${albumId} added to playlist ${playlistId}.`);
+  return { playlistId, albumId, tracksAdded: trackIds.length };
 }
 
-export async function moveTrackInPlaylist(
+export async function addAlbumToPlaylist(playlistId: string, albumId: string, json: boolean): Promise<void> {
+  const client = await getApiClient();
+  const countryCode = await getCountryCode();
+
+  try {
+    const result = await addAlbumToPlaylistData(playlistId, albumId, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\n${result.tracksAdded} tracks from album ${albumId} added to playlist ${playlistId}.`);
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function moveTrackInPlaylistData(
   playlistId: string,
   trackId: string,
   positionBefore: string,
-  json: boolean,
-): Promise<void> {
-  const client = await getApiClient();
-
-  // Get playlist items to find the itemId for the track
+  client: any,
+): Promise<{ playlistId: string; trackId: string; positionBefore: string; moved: boolean }> {
   const { data: itemsData, error: itemsError } = await client.GET('/playlists/{id}/relationships/items' as any, {
     params: { path: { id: playlistId } },
   });
 
   if (itemsError || !itemsData) {
-    console.error(`Error: Failed to get playlist items — ${JSON.stringify(itemsError)}`);
-    process.exit(1);
+    throw new Error(`Failed to get playlist items — ${JSON.stringify(itemsError)}`);
   }
 
   const items = (itemsData as any).data ?? [];
   const item = items.find((i: any) => i.id === trackId);
   if (!item) {
-    console.error(`Error: Track ${trackId} not found in playlist ${playlistId}.`);
-    process.exit(1);
+    throw new Error(`Track ${trackId} not found in playlist ${playlistId}.`);
   }
 
   const itemId = item.meta?.itemId;
   if (!itemId) {
-    console.error(`Error: Could not find itemId for track ${trackId}.`);
-    process.exit(1);
+    throw new Error(`Could not find itemId for track ${trackId}.`);
   }
 
   const meta: any = {};
@@ -289,26 +337,41 @@ export async function moveTrackInPlaylist(
   });
 
   if (error) {
-    console.error(`Error: Failed to move track — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to move track — ${JSON.stringify(error)}`);
   }
 
-  if (json) {
-    console.log(JSON.stringify({ playlistId, trackId, positionBefore, moved: true }, null, 2));
-    return;
-  }
-
-  const posDesc = positionBefore === 'end' ? 'to end of playlist' : `before item ${positionBefore}`;
-  console.log(`\nTrack ${trackId} moved ${posDesc} in playlist ${playlistId}.`);
+  return { playlistId, trackId, positionBefore, moved: true };
 }
 
-export async function updatePlaylistDescription(
+export async function moveTrackInPlaylist(
   playlistId: string,
-  description: string,
+  trackId: string,
+  positionBefore: string,
   json: boolean,
 ): Promise<void> {
   const client = await getApiClient();
 
+  try {
+    const result = await moveTrackInPlaylistData(playlistId, trackId, positionBefore, client);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    const posDesc = positionBefore === 'end' ? 'to end of playlist' : `before item ${positionBefore}`;
+    console.log(`\nTrack ${trackId} moved ${posDesc} in playlist ${playlistId}.`);
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function updatePlaylistDescriptionData(
+  playlistId: string,
+  description: string,
+  client: any,
+): Promise<{ id: string; description: string; success: boolean }> {
   const { error } = await client.PATCH('/playlists/{id}', {
     params: { path: { id: playlistId } },
     body: {
@@ -321,14 +384,30 @@ export async function updatePlaylistDescription(
   });
 
   if (error) {
-    console.error(`Error: Failed to update playlist description — ${JSON.stringify(error)}`);
+    throw new Error(`Failed to update playlist description — ${JSON.stringify(error)}`);
+  }
+
+  return { id: playlistId, description, success: true };
+}
+
+export async function updatePlaylistDescription(
+  playlistId: string,
+  description: string,
+  json: boolean,
+): Promise<void> {
+  const client = await getApiClient();
+
+  try {
+    const result = await updatePlaylistDescriptionData(playlistId, description, client);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\nPlaylist ${playlistId} description updated.`);
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
     process.exit(1);
   }
-
-  if (json) {
-    console.log(JSON.stringify({ id: playlistId, description, success: true }, null, 2));
-    return;
-  }
-
-  console.log(`\nPlaylist ${playlistId} description updated.`);
 }

@@ -1,4 +1,6 @@
 import { getApiClient, getCountryCode } from './auth';
+import type { TrackInfo, SimilarTrack, RadioPlaylist } from './types';
+export type { TrackInfo, SimilarTrack };
 
 function formatDuration(isoDuration: string | undefined): string {
   if (!isoDuration) return '';
@@ -10,22 +12,19 @@ function formatDuration(isoDuration: string | undefined): string {
   return `${h}${m}:${s}`;
 }
 
-export async function getTrackInfo(trackId: string, json: boolean): Promise<void> {
-  const client = await getApiClient();
-
+export async function getTrackInfoData(trackId: string, client: any, countryCode: string): Promise<TrackInfo> {
   const { data, error } = await client.GET('/tracks/{id}', {
     params: {
       path: { id: trackId },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         include: ['artists', 'albums'] as any,
       },
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get track info — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get track info — ${JSON.stringify(error)}`);
   }
 
   const attrs = (data as any).data?.attributes ?? {};
@@ -38,25 +37,23 @@ export async function getTrackInfo(trackId: string, json: boolean): Promise<void
   const album = included.find((item: any) => item.type === 'albums');
   const albumName = album?.attributes?.title ?? undefined;
 
-  // Fetch cover art if we have an album
   let coverUrl: string | undefined;
   if (album?.id) {
     try {
       const { data: artData } = await client.GET('/albums/{id}/relationships/coverArt' as any, {
         params: {
           path: { id: album.id },
-          query: { countryCode: await getCountryCode(), include: ['coverArt'] } as any,
+          query: { countryCode, include: ['coverArt'] } as any,
         },
       });
       const artwork = ((artData as any)?.included ?? []).find((i: any) => i.type === 'artworks');
       const files = artwork?.attributes?.files ?? [];
-      // Pick 640x640 or the largest available
       const preferred = files.find((f: any) => f.meta?.width === 640) ?? files[0];
       coverUrl = preferred?.href;
     } catch {}
   }
 
-  const result = {
+  return {
     id: trackId,
     title: attrs.title ?? 'Unknown',
     artists,
@@ -69,48 +66,56 @@ export async function getTrackInfo(trackId: string, json: boolean): Promise<void
     explicit: attrs.explicit,
     coverUrl,
   };
-
-  if (json) {
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
-
-  console.log(`\nTrack: [${result.id}] ${result.title}`);
-  if (result.artists.length > 0) console.log(`  Artists: ${result.artists.join(', ')}`);
-  if (result.album) console.log(`  Album: ${result.album}`);
-  if (result.duration) console.log(`  Duration: ${result.duration}`);
-  if (result.isrc) console.log(`  ISRC: ${result.isrc}`);
-  if (result.bpm !== undefined) console.log(`  BPM: ${result.bpm}`);
-  if (result.key !== undefined) console.log(`  Key: ${result.key}`);
-  if (result.popularity !== undefined) console.log(`  Popularity: ${result.popularity}`);
-  if (result.explicit !== undefined) console.log(`  Explicit: ${result.explicit}`);
-  if (result.coverUrl) console.log(`  Cover: ${result.coverUrl}`);
-  console.log();
 }
 
-export async function getTrackRadio(trackId: string, json: boolean): Promise<void> {
+export async function getTrackInfo(trackId: string, json: boolean): Promise<void> {
   const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
+  try {
+    const result = await getTrackInfoData(trackId, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\nTrack: [${result.id}] ${result.title}`);
+    if (result.artists.length > 0) console.log(`  Artists: ${result.artists.join(', ')}`);
+    if (result.album) console.log(`  Album: ${result.album}`);
+    if (result.duration) console.log(`  Duration: ${result.duration}`);
+    if (result.isrc) console.log(`  ISRC: ${result.isrc}`);
+    if (result.bpm !== undefined) console.log(`  BPM: ${result.bpm}`);
+    if (result.key !== undefined) console.log(`  Key: ${result.key}`);
+    if (result.popularity !== undefined) console.log(`  Popularity: ${result.popularity}`);
+    if (result.explicit !== undefined) console.log(`  Explicit: ${result.explicit}`);
+    if (result.coverUrl) console.log(`  Cover: ${result.coverUrl}`);
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function getTrackRadioData(trackId: string, client: any, countryCode: string): Promise<RadioPlaylist[]> {
   const { data, error } = await client.GET('/tracks/{id}/relationships/radio' as any, {
     params: {
       path: { id: trackId },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         include: ['radio'] as any,
       } as any,
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get track radio — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get track radio — ${JSON.stringify(error)}`);
   }
 
-  // Radio returns playlists (mix playlists), not individual tracks
   const radioData = (data as any).data ?? [];
   const included = (data as any).included ?? [];
 
-  const playlists = radioData.map((item: any) => {
+  return radioData.map((item: any) => {
     const incl = included.find((i: any) => i.id === item.id && i.type === 'playlists');
     const attrs = incl?.attributes ?? {};
     return {
@@ -120,31 +125,50 @@ export async function getTrackRadio(trackId: string, json: boolean): Promise<voi
       numberOfItems: attrs.numberOfItems,
     };
   });
-
-  if (json) {
-    console.log(JSON.stringify(playlists, null, 2));
-    return;
-  }
-
-  if (playlists.length === 0) {
-    console.log(`No radio found for track ${trackId}.`);
-    return;
-  }
-
-  console.log(`\nRadio for track ${trackId}:\n`);
-  for (const p of playlists) {
-    console.log(`  [${p.id}] ${p.name ?? 'Radio Mix'}${p.numberOfItems ? ` (${p.numberOfItems} tracks)` : ''}`);
-  }
-  console.log();
 }
 
-export async function getTrackByIsrc(isrc: string, json: boolean): Promise<void> {
+export async function getTrackRadio(trackId: string, json: boolean): Promise<void> {
   const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
+  try {
+    const playlists = await getTrackRadioData(trackId, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(playlists, null, 2));
+      return;
+    }
+
+    if (playlists.length === 0) {
+      console.log(`No radio found for track ${trackId}.`);
+      return;
+    }
+
+    console.log(`\nRadio for track ${trackId}:\n`);
+    for (const p of playlists) {
+      console.log(`  [${p.id}] ${p.name ?? 'Radio Mix'}${p.numberOfItems ? ` (${p.numberOfItems} tracks)` : ''}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+interface TrackByIsrcResult {
+  id: string;
+  title: string;
+  artists: string[];
+  duration: string;
+  isrc?: string;
+  popularity?: number;
+}
+
+export async function getTrackByIsrcData(isrc: string, client: any, countryCode: string): Promise<TrackByIsrcResult[]> {
   const { data, error } = await client.GET('/tracks' as any, {
     params: {
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         'filter[isrc]': [isrc] as any,
         include: ['artists'] as any,
       } as any,
@@ -152,14 +176,13 @@ export async function getTrackByIsrc(isrc: string, json: boolean): Promise<void>
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get track by ISRC — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get track by ISRC — ${JSON.stringify(error)}`);
   }
 
   const items = (data as any).data ?? [];
   const included = (data as any).included ?? [];
 
-  const tracks = items.map((item: any) => {
+  return items.map((item: any) => {
     const attrs = item.attributes as any;
     const artistRels = item.relationships?.artists?.data ?? [];
     const artistNames = artistRels.map((rel: any) => {
@@ -175,48 +198,57 @@ export async function getTrackByIsrc(isrc: string, json: boolean): Promise<void>
       popularity: attrs?.popularity,
     };
   });
-
-  if (json) {
-    console.log(JSON.stringify(tracks, null, 2));
-    return;
-  }
-
-  if (tracks.length === 0) {
-    console.log(`No tracks found for ISRC ${isrc}.`);
-    return;
-  }
-
-  console.log(`\nTracks matching ISRC ${isrc}:\n`);
-  for (const t of tracks) {
-    const artistStr = t.artists.length > 0 ? ` by ${t.artists.join(', ')}` : '';
-    const extras = [t.duration, t.popularity !== undefined ? `popularity: ${t.popularity}` : undefined]
-      .filter(Boolean)
-      .join(', ');
-    console.log(`  [${t.id}] ${t.title}${artistStr}${extras ? ` (${extras})` : ''}`);
-  }
-  console.log();
 }
 
-export async function getSimilarTracks(trackId: string, json: boolean): Promise<void> {
+export async function getTrackByIsrc(isrc: string, json: boolean): Promise<void> {
   const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
+  try {
+    const tracks = await getTrackByIsrcData(isrc, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(tracks, null, 2));
+      return;
+    }
+
+    if (tracks.length === 0) {
+      console.log(`No tracks found for ISRC ${isrc}.`);
+      return;
+    }
+
+    console.log(`\nTracks matching ISRC ${isrc}:\n`);
+    for (const t of tracks) {
+      const artistStr = t.artists.length > 0 ? ` by ${t.artists.join(', ')}` : '';
+      const extras = [t.duration, t.popularity !== undefined ? `popularity: ${t.popularity}` : undefined]
+        .filter(Boolean)
+        .join(', ');
+      console.log(`  [${t.id}] ${t.title}${artistStr}${extras ? ` (${extras})` : ''}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function getSimilarTracksData(trackId: string, client: any, countryCode: string): Promise<SimilarTrack[]> {
   const { data, error } = await client.GET('/tracks/{id}/relationships/similarTracks' as any, {
     params: {
       path: { id: trackId },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         include: ['similarTracks'] as any,
       } as any,
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get similar tracks — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get similar tracks — ${JSON.stringify(error)}`);
   }
 
   const included = (data as any).included ?? [];
-  const tracks = included
+  return included
     .filter((item: any) => item.type === 'tracks')
     .map((item: any) => {
       const attrs = item.attributes as any;
@@ -228,23 +260,35 @@ export async function getSimilarTracks(trackId: string, json: boolean): Promise<
         popularity: attrs?.popularity,
       };
     });
+}
 
-  if (json) {
-    console.log(JSON.stringify(tracks, null, 2));
-    return;
-  }
+export async function getSimilarTracks(trackId: string, json: boolean): Promise<void> {
+  const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
-  if (tracks.length === 0) {
-    console.log(`No similar tracks found for track ${trackId}.`);
-    return;
-  }
+  try {
+    const tracks = await getSimilarTracksData(trackId, client, countryCode);
 
-  console.log(`\nSimilar tracks to ${trackId}:\n`);
-  for (const t of tracks) {
-    const extras = [t.duration, t.popularity !== undefined ? `popularity: ${t.popularity}` : undefined]
-      .filter(Boolean)
-      .join(', ');
-    console.log(`  [${t.id}] ${t.title}${extras ? ` (${extras})` : ''}`);
+    if (json) {
+      console.log(JSON.stringify(tracks, null, 2));
+      return;
+    }
+
+    if (tracks.length === 0) {
+      console.log(`No similar tracks found for track ${trackId}.`);
+      return;
+    }
+
+    console.log(`\nSimilar tracks to ${trackId}:\n`);
+    for (const t of tracks) {
+      const extras = [t.duration, t.popularity !== undefined ? `popularity: ${t.popularity}` : undefined]
+        .filter(Boolean)
+        .join(', ');
+      console.log(`  [${t.id}] ${t.title}${extras ? ` (${extras})` : ''}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
   }
-  console.log();
 }

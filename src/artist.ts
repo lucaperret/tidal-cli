@@ -1,4 +1,6 @@
 import { getApiClient, getCountryCode } from './auth';
+import type { ArtistInfo, ArtistTrack, ArtistAlbum, SimilarArtist, RadioPlaylist } from './types';
+export type { ArtistInfo, ArtistTrack, ArtistAlbum, SimilarArtist };
 
 function formatDuration(isoDuration: string | undefined): string {
   if (!isoDuration) return '';
@@ -10,22 +12,19 @@ function formatDuration(isoDuration: string | undefined): string {
   return `${h}${m}:${s}`;
 }
 
-export async function getArtistInfo(artistId: string, json: boolean): Promise<void> {
-  const client = await getApiClient();
-
+export async function getArtistInfoData(artistId: string, client: any, countryCode: string): Promise<ArtistInfo> {
   const { data, error } = await client.GET('/artists/{id}', {
     params: {
       path: { id: artistId },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         include: ['biography'] as any,
       },
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get artist info — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get artist info — ${JSON.stringify(error)}`);
   }
 
   const attrs = (data as any).data?.attributes ?? {};
@@ -34,49 +33,57 @@ export async function getArtistInfo(artistId: string, json: boolean): Promise<vo
   const biographyItem = included.find((item: any) => item.type === 'artistBiographies');
   const biographyText = biographyItem?.attributes?.text ?? attrs.biography?.text ?? attrs.biography;
 
-  const result = {
+  return {
     id: artistId,
     name: attrs.name ?? 'Unknown',
     popularity: attrs.popularity,
     handle: attrs.handle,
     biography: biographyText,
   };
-
-  if (json) {
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
-
-  console.log(`\nArtist: [${result.id}] ${result.name}`);
-  if (result.handle) console.log(`  Handle: ${result.handle}`);
-  if (result.popularity !== undefined) console.log(`  Popularity: ${result.popularity}`);
-  if (result.biography) console.log(`  Biography: ${result.biography}`);
-  console.log();
 }
 
-export async function getArtistRadio(artistId: string, json: boolean): Promise<void> {
+export async function getArtistInfo(artistId: string, json: boolean): Promise<void> {
   const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
+  try {
+    const result = await getArtistInfoData(artistId, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(`\nArtist: [${result.id}] ${result.name}`);
+    if (result.handle) console.log(`  Handle: ${result.handle}`);
+    if (result.popularity !== undefined) console.log(`  Popularity: ${result.popularity}`);
+    if (result.biography) console.log(`  Biography: ${result.biography}`);
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function getArtistRadioData(artistId: string, client: any, countryCode: string): Promise<RadioPlaylist[]> {
   const { data, error } = await client.GET('/artists/{id}/relationships/radio' as any, {
     params: {
       path: { id: artistId },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         include: ['radio'] as any,
       } as any,
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get artist radio — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get artist radio — ${JSON.stringify(error)}`);
   }
 
-  // Radio returns playlists (mix playlists), not individual tracks
   const radioData = (data as any).data ?? [];
   const included = (data as any).included ?? [];
 
-  const playlists = radioData.map((item: any) => {
+  return radioData.map((item: any) => {
     const incl = included.find((i: any) => i.id === item.id && i.type === 'playlists');
     const attrs = incl?.attributes ?? {};
     return {
@@ -84,35 +91,44 @@ export async function getArtistRadio(artistId: string, json: boolean): Promise<v
       type: item.type,
       name: attrs.name,
       numberOfItems: attrs.numberOfItems,
-      description: attrs.description,
     };
   });
-
-  if (json) {
-    console.log(JSON.stringify(playlists, null, 2));
-    return;
-  }
-
-  if (playlists.length === 0) {
-    console.log(`No radio found for artist ${artistId}.`);
-    return;
-  }
-
-  console.log(`\nRadio for artist ${artistId}:\n`);
-  for (const p of playlists) {
-    console.log(`  [${p.id}] ${p.name ?? 'Radio Mix'}${p.numberOfItems ? ` (${p.numberOfItems} tracks)` : ''}`);
-  }
-  console.log();
 }
 
-export async function getArtistTracks(artistId: string, json: boolean): Promise<void> {
+export async function getArtistRadio(artistId: string, json: boolean): Promise<void> {
   const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
+  try {
+    const playlists = await getArtistRadioData(artistId, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(playlists, null, 2));
+      return;
+    }
+
+    if (playlists.length === 0) {
+      console.log(`No radio found for artist ${artistId}.`);
+      return;
+    }
+
+    console.log(`\nRadio for artist ${artistId}:\n`);
+    for (const p of playlists) {
+      console.log(`  [${p.id}] ${p.name ?? 'Radio Mix'}${p.numberOfItems ? ` (${p.numberOfItems} tracks)` : ''}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function getArtistTracksData(artistId: string, client: any, countryCode: string): Promise<ArtistTrack[]> {
   const { data, error } = await client.GET('/artists/{id}/relationships/tracks' as any, {
     params: {
       path: { id: artistId },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         'collapseBy': 'FINGERPRINT',
         include: ['tracks'] as any,
       } as any,
@@ -120,61 +136,69 @@ export async function getArtistTracks(artistId: string, json: boolean): Promise<
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get artist tracks — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get artist tracks — ${JSON.stringify(error)}`);
   }
 
   const included = (data as any).included ?? [];
-  const tracks = included
+  return included
     .filter((item: any) => item.type === 'tracks')
     .map((item: any) => {
       const attrs = item.attributes as any;
       return {
         id: item.id,
         title: attrs?.title ?? 'Unknown',
-        duration: attrs?.duration,
+        duration: formatDuration(attrs?.duration),
         isrc: attrs?.isrc,
         popularity: attrs?.popularity,
       };
     });
-
-  if (json) {
-    console.log(JSON.stringify(tracks, null, 2));
-    return;
-  }
-
-  if (tracks.length === 0) {
-    console.log(`No tracks found for artist ${artistId}.`);
-    return;
-  }
-
-  console.log(`\nTracks for artist ${artistId}:\n`);
-  for (const t of tracks) {
-    console.log(`  [${t.id}] ${t.title}${t.popularity !== undefined ? ` (popularity: ${t.popularity})` : ''}`);
-  }
-  console.log();
 }
 
-export async function getArtistAlbums(artistId: string, json: boolean): Promise<void> {
+export async function getArtistTracks(artistId: string, json: boolean): Promise<void> {
   const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
+  try {
+    const tracks = await getArtistTracksData(artistId, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(tracks, null, 2));
+      return;
+    }
+
+    if (tracks.length === 0) {
+      console.log(`No tracks found for artist ${artistId}.`);
+      return;
+    }
+
+    console.log(`\nTracks for artist ${artistId}:\n`);
+    for (const t of tracks) {
+      console.log(`  [${t.id}] ${t.title}${t.popularity !== undefined ? ` (popularity: ${t.popularity})` : ''}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function getArtistAlbumsData(artistId: string, client: any, countryCode: string): Promise<ArtistAlbum[]> {
   const { data, error } = await client.GET('/artists/{id}/relationships/albums' as any, {
     params: {
       path: { id: artistId },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         include: ['albums'] as any,
       } as any,
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get artist albums — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get artist albums — ${JSON.stringify(error)}`);
   }
 
   const included = (data as any).included ?? [];
-  const albums = included
+  return included
     .filter((item: any) => item.type === 'albums')
     .map((item: any) => {
       const attrs = item.attributes as any;
@@ -186,47 +210,56 @@ export async function getArtistAlbums(artistId: string, json: boolean): Promise<
         numberOfItems: attrs?.numberOfItems,
       };
     });
-
-  if (json) {
-    console.log(JSON.stringify(albums, null, 2));
-    return;
-  }
-
-  if (albums.length === 0) {
-    console.log(`No albums found for artist ${artistId}.`);
-    return;
-  }
-
-  console.log(`\nAlbums for artist ${artistId}:\n`);
-  for (const a of albums) {
-    const extras = [a.albumType, a.releaseDate, a.numberOfItems !== undefined ? `${a.numberOfItems} tracks` : undefined]
-      .filter(Boolean)
-      .join(', ');
-    console.log(`  [${a.id}] ${a.title}${extras ? ` (${extras})` : ''}`);
-  }
-  console.log();
 }
 
-export async function getSimilarArtists(artistId: string, json: boolean): Promise<void> {
+export async function getArtistAlbums(artistId: string, json: boolean): Promise<void> {
   const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
+  try {
+    const albums = await getArtistAlbumsData(artistId, client, countryCode);
+
+    if (json) {
+      console.log(JSON.stringify(albums, null, 2));
+      return;
+    }
+
+    if (albums.length === 0) {
+      console.log(`No albums found for artist ${artistId}.`);
+      return;
+    }
+
+    console.log(`\nAlbums for artist ${artistId}:\n`);
+    for (const a of albums) {
+      const extras = [a.albumType, a.releaseDate, a.numberOfItems !== undefined ? `${a.numberOfItems} tracks` : undefined]
+        .filter(Boolean)
+        .join(', ');
+      console.log(`  [${a.id}] ${a.title}${extras ? ` (${extras})` : ''}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+export async function getSimilarArtistsData(artistId: string, client: any, countryCode: string): Promise<SimilarArtist[]> {
   const { data, error } = await client.GET('/artists/{id}/relationships/similarArtists' as any, {
     params: {
       path: { id: artistId },
       query: {
-        countryCode: await getCountryCode(),
+        countryCode,
         include: ['similarArtists'] as any,
       } as any,
     },
   });
 
   if (error || !data) {
-    console.error(`Error: Failed to get similar artists — ${JSON.stringify(error)}`);
-    process.exit(1);
+    throw new Error(`Failed to get similar artists — ${JSON.stringify(error)}`);
   }
 
   const included = (data as any).included ?? [];
-  const artists = included
+  return included
     .filter((item: any) => item.type === 'artists')
     .map((item: any) => {
       const attrs = item.attributes as any;
@@ -236,20 +269,32 @@ export async function getSimilarArtists(artistId: string, json: boolean): Promis
         popularity: attrs?.popularity,
       };
     });
+}
 
-  if (json) {
-    console.log(JSON.stringify(artists, null, 2));
-    return;
-  }
+export async function getSimilarArtists(artistId: string, json: boolean): Promise<void> {
+  const client = await getApiClient();
+  const countryCode = await getCountryCode();
 
-  if (artists.length === 0) {
-    console.log(`No similar artists found for artist ${artistId}.`);
-    return;
-  }
+  try {
+    const artists = await getSimilarArtistsData(artistId, client, countryCode);
 
-  console.log(`\nSimilar artists to ${artistId}:\n`);
-  for (const a of artists) {
-    console.log(`  [${a.id}] ${a.name}${a.popularity !== undefined ? ` (popularity: ${a.popularity})` : ''}`);
+    if (json) {
+      console.log(JSON.stringify(artists, null, 2));
+      return;
+    }
+
+    if (artists.length === 0) {
+      console.log(`No similar artists found for artist ${artistId}.`);
+      return;
+    }
+
+    console.log(`\nSimilar artists to ${artistId}:\n`);
+    for (const a of artists) {
+      console.log(`  [${a.id}] ${a.name}${a.popularity !== undefined ? ` (popularity: ${a.popularity})` : ''}`);
+    }
+    console.log();
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
   }
-  console.log();
 }
