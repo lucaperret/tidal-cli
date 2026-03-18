@@ -421,7 +421,7 @@ export default function Home() {
           <div className="text-sm text-tidal-gray-400">
             tidal-cli is an open-source project. Not affiliated with TIDAL.
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap justify-center md:justify-end items-center gap-4 md:gap-6">
             <a
               href="https://github.com/lucaperret/tidal-cli"
               target="_blank"
