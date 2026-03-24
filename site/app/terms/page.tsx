@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — tidal-cli",
+  title: "Terms of Service — tidal-cli | Usage Terms and Conditions",
+  description:
+    "Terms of service for tidal-cli, the open-source command-line interface for Tidal music streaming. Free under MIT License, requires a valid Tidal subscription.",
+  authors: [{ name: "Luca Perret", url: "https://lucaperret.ch" }],
+  other: {
+    "article:published_time": "2026-03-18",
+    "article:modified_time": "2026-03-18",
+    "article:author": "Luca Perret",
+  },
 };
 
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <main id="main-content" className="min-h-screen bg-background text-foreground">
       <div className="max-w-3xl mx-auto px-6 py-20">
         <a
           href="/"
@@ -16,9 +24,31 @@ export default function TermsOfService() {
         </a>
 
         <h1 className="text-4xl font-bold mb-2">Terms of Service</h1>
-        <p className="text-tidal-gray-400 mb-12">
-          Last updated: March 18, 2026
+        <p className="text-tidal-gray-400 mb-2">
+          Last updated: <time dateTime="2026-03-18">March 18, 2026</time>
         </p>
+        <p className="text-tidal-gray-400 text-sm mb-12">
+          By <a href="https://lucaperret.ch" target="_blank" rel="author noopener noreferrer" className="text-tidal-cyan hover:underline">Luca Perret</a>
+        </p>
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              name: "Terms of Service",
+              url: "https://tidal-cli.lucaperret.ch/terms",
+              datePublished: "2026-03-18",
+              dateModified: "2026-03-18",
+              author: {
+                "@type": "Person",
+                name: "Luca Perret",
+                url: "https://lucaperret.ch",
+              },
+            }),
+          }}
+        />
 
         <div className="space-y-8 text-tidal-gray-300 leading-relaxed">
           <section>
@@ -85,7 +115,9 @@ export default function TermsOfService() {
               tidal-cli is provided <strong className="text-white">&quot;as is&quot;</strong> without
               warranty of any kind, express or implied. The maintainer does not
               guarantee uninterrupted or error-free operation. Tidal may change
-              their API at any time, which could affect functionality.
+              their API at any time, which could affect functionality. No
+              representations are made regarding the accuracy, reliability, or
+              completeness of the service. Use of tidal-cli is at your own risk.
             </p>
           </section>
 
@@ -182,8 +214,13 @@ export default function TermsOfService() {
               .
             </p>
           </section>
+
+          <div className="mt-12 pt-8 border-t border-tidal-gray-800 flex items-center justify-between text-sm text-tidal-gray-400">
+            <a href="/" className="hover:text-white transition-colors">&larr; Home</a>
+            <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy &rarr;</a>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

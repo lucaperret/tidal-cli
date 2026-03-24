@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — tidal-cli",
+  title: "Privacy Policy — tidal-cli | How We Handle Your Data",
+  description:
+    "Learn how tidal-cli handles your data. No personal data collected, local token storage, OAuth 2.0 with PKCE, and full transparency as an open-source project.",
+  authors: [{ name: "Luca Perret", url: "https://lucaperret.ch" }],
+  other: {
+    "article:published_time": "2026-03-18",
+    "article:modified_time": "2026-03-18",
+    "article:author": "Luca Perret",
+  },
 };
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <main id="main-content" className="min-h-screen bg-background text-foreground">
       <div className="max-w-3xl mx-auto px-6 py-20">
         <a
           href="/"
@@ -16,9 +24,31 @@ export default function PrivacyPolicy() {
         </a>
 
         <h1 className="text-4xl font-bold mb-2">Privacy Policy</h1>
-        <p className="text-tidal-gray-400 mb-12">
-          Last updated: March 18, 2026
+        <p className="text-tidal-gray-400 mb-2">
+          Last updated: <time dateTime="2026-03-18">March 18, 2026</time>
         </p>
+        <p className="text-tidal-gray-400 text-sm mb-12">
+          By <a href="https://lucaperret.ch" target="_blank" rel="author noopener noreferrer" className="text-tidal-cyan hover:underline">Luca Perret</a>
+        </p>
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              name: "Privacy Policy",
+              url: "https://tidal-cli.lucaperret.ch/privacy",
+              datePublished: "2026-03-18",
+              dateModified: "2026-03-18",
+              author: {
+                "@type": "Person",
+                name: "Luca Perret",
+                url: "https://lucaperret.ch",
+              },
+            }),
+          }}
+        />
 
         <div className="space-y-8 text-tidal-gray-300 leading-relaxed">
           <section>
@@ -168,8 +198,13 @@ export default function PrivacyPolicy() {
               .
             </p>
           </section>
+
+          <div className="mt-12 pt-8 border-t border-tidal-gray-800 flex items-center justify-between text-sm text-tidal-gray-400">
+            <a href="/" className="hover:text-white transition-colors">&larr; Home</a>
+            <a href="/terms" className="hover:text-white transition-colors">Terms of Service &rarr;</a>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

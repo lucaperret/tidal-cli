@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "tidal-cli — Command-line interface for Tidal",
   description:
-    "Control Tidal from your terminal. Search, manage playlists, play music, and automate with LLM agents.",
+    "Control Tidal from your terminal with tidal-cli. Search the catalog, manage playlists, play lossless music, and automate with AI agents via CLI or MCP.",
   metadataBase: new URL("https://tidal-cli.lucaperret.ch"),
   openGraph: {
     title: "tidal-cli",
@@ -92,6 +92,11 @@ const jsonLdPerson = {
   url: "https://lucaperret.ch",
   sameAs: ["https://github.com/lucaperret"],
   jobTitle: "Software Engineer",
+  contactPoint: {
+    "@type": "ContactPoint",
+    url: "https://github.com/lucaperret/tidal-cli/issues",
+    contactType: "technical support",
+  },
 };
 
 export default function RootLayout({
@@ -128,6 +133,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-tidal-cyan focus:text-black focus:rounded-lg focus:font-semibold focus:text-sm"
+        >
+          Skip to main content
+        </a>
         {children}
         <Analytics />
       </body>
