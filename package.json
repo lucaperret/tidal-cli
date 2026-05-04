@@ -51,13 +51,15 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@tidal-music/api": "^0.9.1",
-    "@tidal-music/auth": "^1.4.0",
+    "@tidal-music/api": "^0.22.0",
+    "@tidal-music/auth": "^1.6.0",
     "commander": "^14.0.3"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.0"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5",
+    "zod": "^4.4.3"
   }
 }

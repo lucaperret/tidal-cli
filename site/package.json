@@ -9,25 +9,25 @@
     "start": "next start"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.2",
-    "@tidal-music/api": "^0.9.1",
-    "@tidal-music/auth": "^1.4.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@tidal-music/api": "^0.22.0",
+    "@tidal-music/auth": "^1.6.0",
     "@tidal-music/common": "^0.2.0",
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",
-    "framer-motion": "^12.37.0",
-    "mcp-handler": "^1.0.7",
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "zod": "^4.3.6"
+    "framer-motion": "^12.38.0",
+    "mcp-handler": "^1.1.0",
+    "next": "^16.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@tailwindcss/postcss": "^4.2.4",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.2.4",
+    "typescript": "^6.0.3"
   }
 }
