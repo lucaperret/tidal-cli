@@ -271,7 +271,7 @@ export default function Home() {
                 <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-tidal-cyan/10 border border-tidal-cyan/20 flex items-center justify-center text-tidal-cyan font-bold text-lg">3</div>
                 <div>
                   <p className="text-white font-medium mb-1">Ask Claude anything about music</p>
-                  <p className="text-tidal-gray-400 text-sm">32 tools available — search, playlists, library, recommendations, and more.</p>
+                  <p className="text-tidal-gray-400 text-sm">40 tools available — search, playlists, library, recommendations, save-for-later, sharing, and more.</p>
                 </div>
               </div>
             </div>

@@ -25,8 +25,10 @@ tidal-cli wraps the [Tidal API v2](https://developer.tidal.com) into a single co
 - **Playlists** — full CRUD, add/remove tracks, reorder, add entire albums
 - **Library** — favorites for artists, albums, tracks, videos, playlists
 - **Playback** — stream info, direct URLs, local playback via DASH
-- **Recommendations** — personalized mixes (My Mix, Discovery, New Arrivals)
-- **History** — recently added tracks, albums, artists
+- **Recommendations** — personalized mixes (Daily, Discovery, New Release, Offline) with drill-down into mix items
+- **History** — recently added tracks, albums, artists; search history (list, delete, clear)
+- **Save for Later** — bookmark items in a separate queue from your main library
+- **Sharing** — generate public share links for tracks and albums
 - **JSON output** on every command for scripting and agent use
 
 ## Installation
@@ -121,11 +123,26 @@ tidal-cli library remove-playlist --playlist-id <id>
 ### Discovery & History
 
 ```bash
-tidal-cli recommend
+tidal-cli recommend                              # all mix categories
+tidal-cli recommend --type daily                 # daily | discovery | new-release | offline
+tidal-cli mix items <mix-id> --type daily        # tracks inside a specific mix
 tidal-cli history tracks
 tidal-cli history albums
 tidal-cli history artists
+tidal-cli search history                         # your recent searches
+tidal-cli search history-delete <entry-id>
+tidal-cli search history-clear
 tidal-cli user profile
+```
+
+### Save for Later & Sharing
+
+```bash
+tidal-cli saved list
+tidal-cli saved add --type tracks --id <id>      # tracks | albums | artists | playlists | videos
+tidal-cli saved remove --type albums --id <id>
+tidal-cli share track <id>                       # creates a public share link
+tidal-cli share album <id>
 ```
 
 ### Playback
@@ -158,7 +175,7 @@ tidal-cli is available as a remote MCP server for [Claude Desktop](https://claud
 2. Enter: `https://tidal-cli.lucaperret.ch/api/mcp`
 3. Click "Connect" → log in to Tidal → done
 
-32 tools with OAuth authentication, safety annotations, and 3 prompt templates.
+40 tools with OAuth authentication, safety annotations, and 3 prompt templates.
 
 ## Agent Automation
 
@@ -209,7 +226,7 @@ npm test           # run once
 npm run test:watch # watch mode
 ```
 
-111 tests covering search, playlists, artists, tracks, albums, library, auth, and session.
+143 tests covering search, playlists, artists, tracks, albums, library, recommendations, mixes, save-for-later, sharing, search history, auth, and session.
 
 ## License
 

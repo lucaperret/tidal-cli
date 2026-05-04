@@ -31,7 +31,7 @@ const mcpHandler = createMcpHandler(
   {
     serverInfo: {
       name: 'tidal-cli',
-      version: '1.1.2',
+      version: '1.2.2',
     },
   },
   {
