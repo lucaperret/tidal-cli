@@ -1,16 +1,25 @@
 node_modules/
 dist/
 .env
+.env.local
 *.skill
 
 # Next.js site
 site/node_modules/
 site/.next/
 site/out/
+.next/
+
+# Claude Code local settings
+.claude/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# MCPB
+mcpb/build/
+mcpb/*.mcpb
 
 # Session
 .tidal-cli/

@@ -81,7 +81,7 @@ Remote MCP server hosted in `site/` (Next.js on Vercel) for Claude Connectors Di
 - Don't add `client_secret` — use PKCE only
 - Don't require env vars for onboarding — keep it seamless
 - Don't use the legacy v1 API (`api.tidal.com/v1`) — use v2 only
-- Don't commit `.env`, `session.json`, or `*.skill` files
+- Don't commit `session.json` or `*.skill` files
 - Don't hardcode country codes — use `getCountryCode()`
 
 ## Releasing
