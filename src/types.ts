@@ -135,7 +135,16 @@ export interface UserProfile {
   email?: string;
 }
 
+export type MixCategory = 'daily' | 'discovery' | 'new-release' | 'offline';
+
 export interface RecommendationItem {
+  id: string;
+  type: string;
+  name: string;
+  category?: MixCategory;
+}
+
+export interface MixItem {
   id: string;
   type: string;
   name: string;
@@ -145,6 +154,26 @@ export interface RecentItem {
   id: string;
   name: string;
   addedAt?: string;
+}
+
+export interface SearchHistoryEntry {
+  id: string;
+  query: string;
+}
+
+export type SavedItemType = 'tracks' | 'albums' | 'artists' | 'playlists' | 'videos';
+
+export interface SavedItem {
+  id: string;
+  type: string;
+  name: string;
+}
+
+export interface ShareLink {
+  id: string;
+  code: string;
+  createdAt?: string;
+  url?: string;
 }
 
 export type LibraryResourceType = 'artist' | 'album' | 'track' | 'video';

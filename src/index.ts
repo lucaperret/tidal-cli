@@ -27,8 +27,26 @@ import { getArtistInfo, getArtistRadio, getArtistTracks, getArtistAlbums, getSim
 import { getTrackInfo, getTrackRadio, getTrackByIsrc, getSimilarTracks } from './track';
 import { getAlbumInfo, getAlbumByBarcode } from './album';
 import { getRecommendations } from './recommend';
+import type { MixCategory } from './recommend';
+import { getMixItems } from './mix';
 import { getUserProfile } from './user';
 import { getRecentlyAdded } from './history';
+import { listSearchHistory, deleteSearchHistoryEntry, clearSearchHistory } from './search-history';
+import { listSavedItems, addSavedItem, removeSavedItem } from './saved';
+import type { SavedItemType } from './saved';
+import { createShare } from './share';
+import type { ShareableType } from './share';
+
+const MIX_CATEGORIES = ['daily', 'discovery', 'new-release', 'offline'] as const;
+
+function parseMixCategory(value: string | undefined): MixCategory | undefined {
+  if (!value) return undefined;
+  if (!(MIX_CATEGORIES as readonly string[]).includes(value)) {
+    console.error(`Error: invalid mix category "${value}". Use one of: ${MIX_CATEGORIES.join(', ')}`);
+    process.exit(2);
+  }
+  return value as MixCategory;
+}
 
 const program = new Command();
 
@@ -105,6 +123,27 @@ searchCmd
   .description('Browse editorial playlists by genre or keyword')
   .action(wrapAction(async (genre: string) => {
     await search('playlist', genre || 'top hits', getJson());
+  }));
+
+searchCmd
+  .command('history')
+  .description('List your search history')
+  .action(wrapAction(async () => {
+    await listSearchHistory(getJson());
+  }));
+
+searchCmd
+  .command('history-delete <entry-id>')
+  .description('Delete a single search history entry')
+  .action(wrapAction(async (entryId: string) => {
+    await deleteSearchHistoryEntry(entryId, getJson());
+  }));
+
+searchCmd
+  .command('history-clear')
+  .description('Clear all search history entries')
+  .action(wrapAction(async () => {
+    await clearSearchHistory(getJson());
   }));
 
 // Artist
@@ -203,8 +242,77 @@ albumCmd
 program
   .command('recommend')
   .description('Get personalized recommendations')
+  .option('--type <category>', `Mix category: ${MIX_CATEGORIES.join(', ')}`)
+  .action(wrapAction(async (opts: { type?: string }) => {
+    await getRecommendations(parseMixCategory(opts.type), getJson());
+  }));
+
+// Mix
+const mixCmd = program
+  .command('mix')
+  .description('Browse personalized mix contents');
+
+mixCmd
+  .command('items <mix-id>')
+  .description('Get items inside a specific mix')
+  .requiredOption('--type <category>', `Mix category: ${MIX_CATEGORIES.join(', ')}`)
+  .action(wrapAction(async (mixId: string, opts: { type: string }) => {
+    const cat = parseMixCategory(opts.type);
+    if (!cat) return;
+    await getMixItems(cat, mixId, getJson());
+  }));
+
+// Share
+program
+  .command('share <type> <id>')
+  .description('Create a share link for a track or album (type: track | album)')
+  .action(wrapAction(async (type: string, id: string) => {
+    const normalized = type === 'track' ? 'tracks' : type === 'album' ? 'albums' : null;
+    if (!normalized) {
+      console.error('Error: type must be "track" or "album"');
+      process.exit(2);
+    }
+    await createShare(normalized as ShareableType, id, getJson());
+  }));
+
+// Saved (save for later)
+const savedCmd = program
+  .command('saved')
+  .description('Manage your save-for-later collection');
+
+savedCmd
+  .command('list')
+  .description('List items saved for later')
   .action(wrapAction(async () => {
-    await getRecommendations(getJson());
+    await listSavedItems(getJson());
+  }));
+
+savedCmd
+  .command('add')
+  .description('Save an item for later')
+  .requiredOption('--type <type>', 'Item type: tracks, albums, artists, playlists, videos')
+  .requiredOption('--id <id>', 'Item ID')
+  .action(wrapAction(async (opts: { type: string; id: string }) => {
+    const allowed: SavedItemType[] = ['tracks', 'albums', 'artists', 'playlists', 'videos'];
+    if (!allowed.includes(opts.type as SavedItemType)) {
+      console.error(`Error: invalid type. Use one of: ${allowed.join(', ')}`);
+      process.exit(2);
+    }
+    await addSavedItem(opts.type as SavedItemType, opts.id, getJson());
+  }));
+
+savedCmd
+  .command('remove')
+  .description('Remove an item from saved')
+  .requiredOption('--type <type>', 'Item type')
+  .requiredOption('--id <id>', 'Item ID')
+  .action(wrapAction(async (opts: { type: string; id: string }) => {
+    const allowed: SavedItemType[] = ['tracks', 'albums', 'artists', 'playlists', 'videos'];
+    if (!allowed.includes(opts.type as SavedItemType)) {
+      console.error(`Error: invalid type. Use one of: ${allowed.join(', ')}`);
+      process.exit(2);
+    }
+    await removeSavedItem(opts.type as SavedItemType, opts.id, getJson());
   }));
 
 // User

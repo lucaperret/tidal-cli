@@ -10,8 +10,12 @@ import { listPlaylistsData, createPlaylistData, renamePlaylistData, deletePlayli
 import { addToLibraryData, removeFromLibraryData, listFavoritedPlaylistsData, addPlaylistToFavoritesData, removePlaylistFromFavoritesData } from '../../lib/cli/library';
 import { playbackInfoData, playbackUrlData } from '../../lib/cli/playback';
 import { getRecommendationsData } from '../../lib/cli/recommend';
+import { getMixItemsData } from '../../lib/cli/mix';
 import { getRecentlyAddedData } from '../../lib/cli/history';
 import { getUserProfileData } from '../../lib/cli/user';
+import { listSearchHistoryData, deleteSearchHistoryEntryData, clearSearchHistoryData } from '../../lib/cli/search-history';
+import { listSavedItemsData, addSavedItemData, removeSavedItemData } from '../../lib/cli/saved';
+import { createShareData } from '../../lib/cli/share';
 
 import { getTidalTokens, getAccessTokenUserId, saveTidalTokens } from './redis';
 import { refreshTidalToken } from './tidal-oauth';
@@ -317,11 +321,80 @@ export function registerTools(server: McpServer) {
   });
 
   // === Recommendations ===
-  server.tool('tidal_recommendations', 'Get personalized music recommendations', {},
-  { readOnlyHint: true, destructiveHint: false, openWorldHint: true, title: 'Recommendations' },
+  server.tool('tidal_recommendations', 'Get personalized music recommendations across daily, discovery, new-release, and offline mixes', {
+    category: z.enum(['daily', 'discovery', 'new-release', 'offline']).optional().describe('Filter to a single mix category'),
+  }, { readOnlyHint: true, destructiveHint: false, openWorldHint: true, title: 'Recommendations' },
+  async ({ category }, extra) => {
+    const { client, countryCode } = await getClientAndCountry(extractToken(extra));
+    return text(await getRecommendationsData(client, countryCode, category));
+  });
+
+  server.tool('tidal_mix_items', 'Get items inside a specific mix returned by tidal_recommendations', {
+    category: z.enum(['daily', 'discovery', 'new-release', 'offline']).describe('Mix category'),
+    mixId: z.string().describe('Mix ID from tidal_recommendations'),
+  }, { readOnlyHint: true, destructiveHint: false, openWorldHint: true, title: 'Mix Items' },
+  async ({ category, mixId }, extra) => {
+    const { client, countryCode } = await getClientAndCountry(extractToken(extra));
+    return text(await getMixItemsData(category, mixId, client, countryCode));
+  });
+
+  // === Search history ===
+  server.tool('tidal_search_history', 'List your recent search queries', {},
+  { readOnlyHint: true, destructiveHint: false, openWorldHint: false, title: 'Search History' },
   async (_args, extra) => {
     const { client, countryCode } = await getClientAndCountry(extractToken(extra));
-    return text(await getRecommendationsData(client, countryCode));
+    return text(await listSearchHistoryData(client, countryCode));
+  });
+
+  server.tool('tidal_search_history_delete', 'Delete a single search history entry', {
+    entryId: z.string().describe('Search history entry ID'),
+  }, { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false, title: 'Delete Search History Entry' },
+  async ({ entryId }, extra) => {
+    const { client } = await getClientAndCountry(extractToken(extra));
+    return text(await deleteSearchHistoryEntryData(entryId, client));
+  });
+
+  server.tool('tidal_search_history_clear', 'Clear all search history entries', {},
+  { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false, title: 'Clear Search History' },
+  async (_args, extra) => {
+    const { client, countryCode } = await getClientAndCountry(extractToken(extra));
+    return text(await clearSearchHistoryData(client, countryCode));
+  });
+
+  // === Save for later ===
+  server.tool('tidal_saved_list', 'List items saved for later (separate from main library)', {},
+  { readOnlyHint: true, destructiveHint: false, openWorldHint: false, title: 'Saved Items' },
+  async (_args, extra) => {
+    const { client } = await getClientAndCountry(extractToken(extra));
+    return text(await listSavedItemsData(client));
+  });
+
+  server.tool('tidal_saved_add', 'Save an item for later without adding it to the main library', {
+    itemType: z.enum(['tracks', 'albums', 'artists', 'playlists', 'videos']).describe('Item type'),
+    itemId: z.string().describe('Item ID'),
+  }, { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false, title: 'Save for Later' },
+  async ({ itemType, itemId }, extra) => {
+    const { client } = await getClientAndCountry(extractToken(extra));
+    return text(await addSavedItemData(itemType, itemId, client));
+  });
+
+  server.tool('tidal_saved_remove', 'Remove an item from the save-for-later list', {
+    itemType: z.enum(['tracks', 'albums', 'artists', 'playlists', 'videos']).describe('Item type'),
+    itemId: z.string().describe('Item ID'),
+  }, { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false, title: 'Remove Saved Item' },
+  async ({ itemType, itemId }, extra) => {
+    const { client } = await getClientAndCountry(extractToken(extra));
+    return text(await removeSavedItemData(itemType, itemId, client));
+  });
+
+  // === Share ===
+  server.tool('tidal_share_create', 'Create a public share link for a track or album', {
+    resourceType: z.enum(['tracks', 'albums']).describe('Type of resource to share'),
+    resourceId: z.string().describe('Resource ID'),
+  }, { readOnlyHint: false, destructiveHint: false, openWorldHint: true, title: 'Create Share Link' },
+  async ({ resourceType, resourceId }, extra) => {
+    const { client } = await getClientAndCountry(extractToken(extra));
+    return text(await createShareData(resourceType, resourceId, client));
   });
 
   // === History ===
