@@ -31,7 +31,7 @@ const mcpHandler = createMcpHandler(
   {
     serverInfo: {
       name: 'tidal-cli',
-      version: '1.2.3',
+      version: '1.2.4',
     },
   },
   {
@@ -54,9 +54,42 @@ const verifyToken = async (_req: Request, bearerToken?: string): Promise<AuthInf
   };
 };
 
-const handler = withMcpAuth(mcpHandler, verifyToken, {
+const baseHandler = withMcpAuth(mcpHandler, verifyToken, {
   required: true,
   resourceUrl: SITE_URL,
 });
 
-export { handler as GET, handler as POST, handler as DELETE };
+// Add CORS headers and expose WWW-Authenticate so cross-origin clients can
+// read the OAuth challenge and start the auth flow.
+const handler = async (req: Request): Promise<Response> => {
+  const res = await baseHandler(req);
+  const headers = new Headers(res.headers);
+  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, MCP-Session-Id, MCP-Protocol-Version');
+  headers.set('Access-Control-Expose-Headers', 'WWW-Authenticate, MCP-Session-Id');
+  return new Response(res.body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers,
+  });
+};
+
+const optionsHandler = (): Response =>
+  new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, MCP-Session-Id, MCP-Protocol-Version',
+      'Access-Control-Expose-Headers': 'WWW-Authenticate, MCP-Session-Id',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+
+export {
+  handler as GET,
+  handler as POST,
+  handler as DELETE,
+  optionsHandler as OPTIONS,
+};
