@@ -25,12 +25,15 @@ export async function GET(req: NextRequest) {
     url.hostname === 'claude.com' ||
     url.hostname === 'chatgpt.com' ||
     url.hostname.endsWith('.openai.com') ||
-    url.hostname === 'api.smithery.ai' ||
+    url.hostname === 'smithery.ai' ||
+    url.hostname.endsWith('.smithery.ai') ||
+    url.hostname === 'smithery.run' ||
+    url.hostname.endsWith('.smithery.run') ||
     url.hostname === 'localhost' ||
     url.hostname === '127.0.0.1';
   if (!isAllowed) {
     return NextResponse.json(
-      { error: 'invalid_request', error_description: 'redirect_uri not allowed' },
+      { error: 'invalid_request', error_description: `redirect_uri not allowed: ${url.hostname}` },
       { status: 400 },
     );
   }
