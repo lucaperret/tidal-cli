@@ -31,7 +31,7 @@ const mcpHandler = createMcpHandler(
   {
     serverInfo: {
       name: 'tidal-cli',
-      version: '1.2.2',
+      version: '1.2.3',
     },
   },
   {
@@ -55,7 +55,7 @@ const verifyToken = async (_req: Request, bearerToken?: string): Promise<AuthInf
 };
 
 const handler = withMcpAuth(mcpHandler, verifyToken, {
-  required: false,
+  required: true,
   resourceUrl: SITE_URL,
 });
 
