@@ -1,6 +1,6 @@
 {
   "name": "@lucaperret/tidal-cli",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "CLI for Tidal music streaming service, designed for LLM agent automation",
   "main": "dist/index.js",
   "bin": {
