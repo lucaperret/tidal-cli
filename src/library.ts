@@ -1,4 +1,5 @@
 import { getApiClient } from './auth';
+import { fetchAllPages } from './pagination';
 import type { LibraryResourceType } from './types';
 export type { LibraryResourceType };
 
@@ -96,20 +97,15 @@ export async function removeFromLibrary(
 }
 
 export async function listFavoritedPlaylistsData(client: any): Promise<Array<{ id: string; name: string; numberOfItems?: number }>> {
-  const { data, error } = await (client as any).GET('/userCollectionPlaylists/{id}/relationships/items', {
-    params: {
+  const { included } = await fetchAllPages(
+    client,
+    '/userCollectionPlaylists/{id}/relationships/items',
+    {
       path: { id: 'me' },
-      query: {
-        include: ['items'] as any,
-      } as any,
+      query: { include: ['items'] },
     },
-  });
+  );
 
-  if (error || !data) {
-    throw new Error(`Failed to list favorited playlists — ${JSON.stringify(error)}`);
-  }
-
-  const included = (data as any).included ?? [];
   return included
     .filter((item: any) => item.type === 'playlists')
     .map((item: any) => {
