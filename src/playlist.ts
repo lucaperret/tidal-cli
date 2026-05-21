@@ -1,22 +1,17 @@
 import { getApiClient, getCountryCode } from './auth';
+import { fetchAllPages } from './pagination';
 import type { PlaylistInfo } from './types';
 export type { PlaylistInfo };
 
 export async function listPlaylistsData(client: any, countryCode: string): Promise<PlaylistInfo[]> {
-  const { data, error } = await client.GET('/playlists', {
-    params: {
-      query: {
-        'filter[owners.id]': ['me'] as any,
-        countryCode,
-      },
+  const { data } = await fetchAllPages(client, '/playlists', {
+    query: {
+      'filter[owners.id]': ['me'],
+      countryCode,
     },
   });
 
-  if (error || !data) {
-    throw new Error(`Failed to list playlists — ${JSON.stringify(error)}`);
-  }
-
-  return ((data as any).data ?? []).map((p: any) => ({
+  return data.map((p: any) => ({
     id: p.id,
     name: p.attributes?.name ?? 'Untitled',
     description: p.attributes?.description,
