@@ -195,15 +195,10 @@ export async function addTrackToPlaylist(playlistId: string, trackId: string, js
 }
 
 export async function removeTrackFromPlaylistData(playlistId: string, trackId: string, client: any): Promise<{ playlistId: string; trackId: string; removed: boolean }> {
-  const { data: itemsData, error: itemsError } = await client.GET('/playlists/{id}/relationships/items' as any, {
-    params: { path: { id: playlistId } },
+  const { data: items } = await fetchAllPages(client, '/playlists/{id}/relationships/items', {
+    path: { id: playlistId },
   });
 
-  if (itemsError || !itemsData) {
-    throw new Error(`Failed to get playlist items — ${JSON.stringify(itemsError)}`);
-  }
-
-  const items = (itemsData as any).data ?? [];
   const item = items.find((i: any) => i.id === trackId);
   if (!item) {
     throw new Error(`Track ${trackId} not found in playlist ${playlistId}.`);
@@ -299,15 +294,10 @@ export async function moveTrackInPlaylistData(
   positionBefore: string,
   client: any,
 ): Promise<{ playlistId: string; trackId: string; positionBefore: string; moved: boolean }> {
-  const { data: itemsData, error: itemsError } = await client.GET('/playlists/{id}/relationships/items' as any, {
-    params: { path: { id: playlistId } },
+  const { data: items } = await fetchAllPages(client, '/playlists/{id}/relationships/items', {
+    path: { id: playlistId },
   });
 
-  if (itemsError || !itemsData) {
-    throw new Error(`Failed to get playlist items — ${JSON.stringify(itemsError)}`);
-  }
-
-  const items = (itemsData as any).data ?? [];
   const item = items.find((i: any) => i.id === trackId);
   if (!item) {
     throw new Error(`Track ${trackId} not found in playlist ${playlistId}.`);
