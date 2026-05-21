@@ -19,19 +19,15 @@ exports.moveTrackInPlaylist = moveTrackInPlaylist;
 exports.updatePlaylistDescriptionData = updatePlaylistDescriptionData;
 exports.updatePlaylistDescription = updatePlaylistDescription;
 const auth_1 = require("./auth");
+const pagination_1 = require("./pagination");
 async function listPlaylistsData(client, countryCode) {
-    const { data, error } = await client.GET('/playlists', {
-        params: {
-            query: {
-                'filter[owners.id]': ['me'],
-                countryCode,
-            },
+    const { data } = await (0, pagination_1.fetchAllPages)(client, '/playlists', {
+        query: {
+            'filter[owners.id]': ['me'],
+            countryCode,
         },
     });
-    if (error || !data) {
-        throw new Error(`Failed to list playlists — ${JSON.stringify(error)}`);
-    }
-    return (data.data ?? []).map((p) => ({
+    return data.map((p) => ({
         id: p.id,
         name: p.attributes?.name ?? 'Untitled',
         description: p.attributes?.description,
@@ -187,13 +183,9 @@ async function addTrackToPlaylist(playlistId, trackId, json) {
     }
 }
 async function removeTrackFromPlaylistData(playlistId, trackId, client) {
-    const { data: itemsData, error: itemsError } = await client.GET('/playlists/{id}/relationships/items', {
-        params: { path: { id: playlistId } },
+    const { data: items } = await (0, pagination_1.fetchAllPages)(client, '/playlists/{id}/relationships/items', {
+        path: { id: playlistId },
     });
-    if (itemsError || !itemsData) {
-        throw new Error(`Failed to get playlist items — ${JSON.stringify(itemsError)}`);
-    }
-    const items = itemsData.data ?? [];
     const item = items.find((i) => i.id === trackId);
     if (!item) {
         throw new Error(`Track ${trackId} not found in playlist ${playlistId}.`);
@@ -267,13 +259,9 @@ async function addAlbumToPlaylist(playlistId, albumId, json) {
     }
 }
 async function moveTrackInPlaylistData(playlistId, trackId, positionBefore, client) {
-    const { data: itemsData, error: itemsError } = await client.GET('/playlists/{id}/relationships/items', {
-        params: { path: { id: playlistId } },
+    const { data: items } = await (0, pagination_1.fetchAllPages)(client, '/playlists/{id}/relationships/items', {
+        path: { id: playlistId },
     });
-    if (itemsError || !itemsData) {
-        throw new Error(`Failed to get playlist items — ${JSON.stringify(itemsError)}`);
-    }
-    const items = itemsData.data ?? [];
     const item = items.find((i) => i.id === trackId);
     if (!item) {
         throw new Error(`Track ${trackId} not found in playlist ${playlistId}.`);

@@ -15,6 +15,7 @@ const files = [
   'album.js', 'album.d.ts',
   'playlist.js', 'playlist.d.ts',
   'library.js', 'library.d.ts',
+  'pagination.js', 'pagination.d.ts',
   'playback.js', 'playback.d.ts',
   'recommend.js', 'recommend.d.ts',
   'mix.js', 'mix.d.ts',
