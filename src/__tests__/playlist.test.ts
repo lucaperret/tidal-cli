@@ -107,6 +107,30 @@ describe('listPlaylists', () => {
 
     await expect(listPlaylists(false)).rejects.toThrow('process.exit(1)');
   });
+
+  it('follows cursor pagination across multiple pages', async () => {
+    mockClient.GET
+      .mockResolvedValueOnce({
+        data: {
+          data: [{ id: 'pl-1', attributes: { name: 'Page1', numberOfItems: 1 } }],
+          links: { next: '/playlists?filter%5Bowners.id%5D=me&page%5Bcursor%5D=CURSOR2' },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          data: [{ id: 'pl-2', attributes: { name: 'Page2', numberOfItems: 2 } }],
+          links: {}, // no `next` -> stop
+        },
+      });
+
+    await listPlaylists(false);
+
+    expect(mockClient.GET).toHaveBeenCalledTimes(2);
+    // second call carries the cursor
+    expect(mockClient.GET.mock.calls[1][1].params.query['page[cursor]']).toBe('CURSOR2');
+    expect(output.some((l) => l.includes('[pl-1] Page1'))).toBe(true);
+    expect(output.some((l) => l.includes('[pl-2] Page2'))).toBe(true);
+  });
 });
 
 describe('createPlaylist', () => {
