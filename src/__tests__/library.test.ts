@@ -119,6 +119,10 @@ describe('listFavoritedPlaylists', () => {
   it('lists favorited playlists', async () => {
     mockClient.GET.mockResolvedValue({
       data: {
+        data: [
+          { type: 'playlists', id: 'pl-fav-1' },
+          { type: 'playlists', id: 'pl-fav-2' },
+        ],
         included: [
           {
             id: 'pl-fav-1',
@@ -143,6 +147,7 @@ describe('listFavoritedPlaylists', () => {
   it('outputs JSON', async () => {
     mockClient.GET.mockResolvedValue({
       data: {
+        data: [{ type: 'playlists', id: 'pl-1' }],
         included: [
           { id: 'pl-1', type: 'playlists', attributes: { name: 'Fav PL', numberOfItems: 10 } },
         ],
@@ -168,6 +173,37 @@ describe('listFavoritedPlaylists', () => {
     mockClient.GET.mockResolvedValue({ data: null, error: { status: 500 } });
 
     await expect(listFavoritedPlaylists(false)).rejects.toThrow('process.exit(1)');
+  });
+
+  it('follows cursor pagination across multiple pages', async () => {
+    mockClient.GET
+      .mockResolvedValueOnce({
+        data: {
+          data: [{ type: 'playlists', id: 'pl-1' }],
+          included: [
+            { id: 'pl-1', type: 'playlists', attributes: { name: 'Page1', numberOfItems: 10 } },
+          ],
+          links: {
+            next: '/userCollectionPlaylists/me/relationships/items?page%5Bcursor%5D=CURSOR2',
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          data: [{ type: 'playlists', id: 'pl-2' }],
+          included: [
+            { id: 'pl-2', type: 'playlists', attributes: { name: 'Page2', numberOfItems: 20 } },
+          ],
+          links: {}, // no `next` -> stop
+        },
+      });
+
+    await listFavoritedPlaylists(false);
+
+    expect(mockClient.GET).toHaveBeenCalledTimes(2);
+    expect(mockClient.GET.mock.calls[1][1].params.query['page[cursor]']).toBe('CURSOR2');
+    expect(output.some((l) => l.includes('[pl-1] Page1'))).toBe(true);
+    expect(output.some((l) => l.includes('[pl-2] Page2'))).toBe(true);
   });
 });
 
