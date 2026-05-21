@@ -345,6 +345,34 @@ describe('removeTrackFromPlaylist', () => {
     const parsed = JSON.parse(output.join(''));
     expect(parsed).toEqual({ playlistId: 'pl-1', trackId: 't-100', removed: true });
   });
+
+  it('finds and removes a track that is on page 2', async () => {
+    mockClient.GET
+      .mockResolvedValueOnce({
+        data: {
+          data: [{ id: 't-1', meta: { itemId: 'item-1' } }],
+          links: { next: '/playlists/pl-1/relationships/items?page%5Bcursor%5D=C2' },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          data: [{ id: 't-2', meta: { itemId: 'item-2' } }],
+          links: {},
+        },
+      });
+    mockClient.DELETE.mockResolvedValue({ error: undefined });
+
+    await removeTrackFromPlaylist('pl-1', 't-2', false);
+
+    expect(mockClient.GET).toHaveBeenCalledTimes(2);
+    expect(mockClient.DELETE).toHaveBeenCalledWith('/playlists/{id}/relationships/items', {
+      params: { path: { id: 'pl-1' } },
+      body: {
+        data: [{ id: 't-2', type: 'tracks', meta: { itemId: 'item-2' } }],
+      },
+    });
+    expect(output.some((l) => l.includes('t-2 removed from playlist pl-1'))).toBe(true);
+  });
 });
 
 describe('updatePlaylistDescription', () => {
@@ -443,5 +471,33 @@ describe('moveTrackInPlaylist', () => {
 
     const parsed = JSON.parse(output.join(''));
     expect(parsed).toEqual({ playlistId: 'pl-1', trackId: 't-1', positionBefore: 'item-x', moved: true });
+  });
+
+  it('finds and moves a track that is on page 2', async () => {
+    mockClient.GET
+      .mockResolvedValueOnce({
+        data: {
+          data: [{ id: 't-1', meta: { itemId: 'item-1' } }],
+          links: { next: '/playlists/pl-1/relationships/items?page%5Bcursor%5D=C2' },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          data: [{ id: 't-2', meta: { itemId: 'item-2' } }],
+          links: {},
+        },
+      });
+    mockClient.PATCH.mockResolvedValue({ error: undefined });
+
+    await moveTrackInPlaylist('pl-1', 't-2', 'end', false);
+
+    expect(mockClient.GET).toHaveBeenCalledTimes(2);
+    expect(mockClient.PATCH).toHaveBeenCalledWith('/playlists/{id}/relationships/items', {
+      params: { path: { id: 'pl-1' } },
+      body: {
+        data: [{ id: 't-2', type: 'tracks', meta: { itemId: 'item-2' } }],
+        meta: {},
+      },
+    });
   });
 });
