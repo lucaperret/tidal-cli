@@ -11,6 +11,7 @@ exports.addPlaylistToFavorites = addPlaylistToFavorites;
 exports.removePlaylistFromFavoritesData = removePlaylistFromFavoritesData;
 exports.removePlaylistFromFavorites = removePlaylistFromFavorites;
 const auth_1 = require("./auth");
+const pagination_1 = require("./pagination");
 const collectionEndpoints = {
     artist: { path: '/userCollectionArtists/{id}/relationships/items', type: 'artists' },
     album: { path: '/userCollectionAlbums/{id}/relationships/items', type: 'albums' },
@@ -74,18 +75,10 @@ async function removeFromLibrary(resourceType, resourceId, json) {
     }
 }
 async function listFavoritedPlaylistsData(client) {
-    const { data, error } = await client.GET('/userCollectionPlaylists/{id}/relationships/items', {
-        params: {
-            path: { id: 'me' },
-            query: {
-                include: ['items'],
-            },
-        },
+    const { included } = await (0, pagination_1.fetchAllPages)(client, '/userCollectionPlaylists/{id}/relationships/items', {
+        path: { id: 'me' },
+        query: { include: ['items'] },
     });
-    if (error || !data) {
-        throw new Error(`Failed to list favorited playlists — ${JSON.stringify(error)}`);
-    }
-    const included = data.included ?? [];
     return included
         .filter((item) => item.type === 'playlists')
         .map((item) => {
