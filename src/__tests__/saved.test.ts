@@ -35,6 +35,10 @@ describe('listSavedItemsData', () => {
   it('reads included resources', async () => {
     mockClient.GET.mockResolvedValue({
       data: {
+        data: [
+          { id: 't-1', type: 'tracks' },
+          { id: 'a-1', type: 'albums' },
+        ],
         included: [
           { id: 't-1', type: 'tracks', attributes: { title: 'Song' } },
           { id: 'a-1', type: 'albums', attributes: { title: 'Album' } },
@@ -55,13 +59,13 @@ describe('listSavedItemsData', () => {
 
   it('throws on error', async () => {
     mockClient.GET.mockResolvedValue({ data: null, error: { status: 500 } });
-    await expect(listSavedItemsData(mockClient)).rejects.toThrow(/Failed to list saved items/);
+    await expect(listSavedItemsData(mockClient)).rejects.toThrow(/Failed to fetch/);
   });
 });
 
 describe('listSavedItems CLI', () => {
   it('handles empty list', async () => {
-    mockClient.GET.mockResolvedValue({ data: { included: [] } });
+    mockClient.GET.mockResolvedValue({ data: { data: [{ id: '__end__', type: '__end__' }], included: [] } });
     await listSavedItems(false);
     expect(output.some((l) => l.includes('No saved items'))).toBe(true);
   });

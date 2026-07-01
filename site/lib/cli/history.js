@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRecentlyAddedData = getRecentlyAddedData;
 exports.getRecentlyAdded = getRecentlyAdded;
 const auth_1 = require("./auth");
+const pagination_1 = require("./pagination");
 const endpointMap = {
     tracks: '/userCollectionTracks/{id}/relationships/items',
     albums: '/userCollectionAlbums/{id}/relationships/items',
@@ -14,20 +15,15 @@ const includeTypeMap = {
     artists: 'artists',
 };
 async function getRecentlyAddedData(type, client, countryCode) {
-    const { data, error } = await client.GET(endpointMap[type], {
-        params: {
-            path: { id: 'me' },
-            query: {
-                countryCode,
-                include: ['items'],
-                sort: ['-addedAt'],
-            },
+    // Paginated: returns the full collection (most-recent-first), not just the first ~20.
+    const { data: relData, included } = await (0, pagination_1.fetchAllPages)(client, endpointMap[type], {
+        path: { id: 'me' },
+        query: {
+            countryCode,
+            include: ['items'],
+            sort: ['-addedAt'],
         },
     });
-    if (error || !data) {
-        throw new Error(`Failed to get recently added ${type} — ${JSON.stringify(error)}`);
-    }
-    const included = data.included ?? [];
     const items = included
         .filter((item) => item.type === includeTypeMap[type])
         .map((item) => {
@@ -39,7 +35,6 @@ async function getRecentlyAddedData(type, client, countryCode) {
         };
     });
     // Enrich with addedAt from the relationship data if available
-    const relData = data.data ?? [];
     for (const rel of relData) {
         const addedAt = rel.meta?.addedAt;
         if (addedAt) {

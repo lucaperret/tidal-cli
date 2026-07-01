@@ -1,4 +1,5 @@
 import { getApiClient, getCountryCode } from './auth';
+import { fetchAllPages } from './pagination';
 import type { RecentItem, RecentType } from './types';
 export type { RecentItem, RecentType };
 
@@ -15,22 +16,16 @@ const includeTypeMap: Record<RecentType, string> = {
 };
 
 export async function getRecentlyAddedData(type: RecentType, client: any, countryCode: string): Promise<RecentItem[]> {
-  const { data, error } = await (client as any).GET(endpointMap[type], {
-    params: {
-      path: { id: 'me' },
-      query: {
-        countryCode,
-        include: ['items'] as any,
-        sort: ['-addedAt'] as any,
-      } as any,
+  // Paginated: returns the full collection (most-recent-first), not just the first ~20.
+  const { data: relData, included } = await fetchAllPages(client, endpointMap[type], {
+    path: { id: 'me' },
+    query: {
+      countryCode,
+      include: ['items'],
+      sort: ['-addedAt'],
     },
   });
 
-  if (error || !data) {
-    throw new Error(`Failed to get recently added ${type} — ${JSON.stringify(error)}`);
-  }
-
-  const included = (data as any).included ?? [];
   const items = included
     .filter((item: any) => item.type === includeTypeMap[type])
     .map((item: any) => {
@@ -43,7 +38,6 @@ export async function getRecentlyAddedData(type: RecentType, client: any, countr
     });
 
   // Enrich with addedAt from the relationship data if available
-  const relData = (data as any).data ?? [];
   for (const rel of relData) {
     const addedAt = rel.meta?.addedAt;
     if (addedAt) {

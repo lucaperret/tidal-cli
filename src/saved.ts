@@ -1,20 +1,15 @@
 import { getApiClient } from './auth';
+import { fetchAllPages } from './pagination';
 import type { SavedItem, SavedItemType } from './types';
 export type { SavedItem, SavedItemType };
 
 export async function listSavedItemsData(client: any): Promise<SavedItem[]> {
-  const { data, error } = await (client as any).GET('/userCollectionSaveForLaters/{id}/relationships/items', {
-    params: {
-      path: { id: 'me' },
-      query: { include: ['items'] as any } as any,
-    },
+  // Paginated: returns the full save-for-later collection, not just the first ~20.
+  const { included } = await fetchAllPages(client, '/userCollectionSaveForLaters/{id}/relationships/items', {
+    path: { id: 'me' },
+    query: { include: ['items'] },
   });
 
-  if (error || !data) {
-    throw new Error(`Failed to list saved items — ${JSON.stringify(error)}`);
-  }
-
-  const included = (data as any).included ?? [];
   return included.map((item: any) => {
     const attrs = item.attributes ?? {};
     return {

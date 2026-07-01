@@ -7,17 +7,13 @@ exports.addSavedItem = addSavedItem;
 exports.removeSavedItemData = removeSavedItemData;
 exports.removeSavedItem = removeSavedItem;
 const auth_1 = require("./auth");
+const pagination_1 = require("./pagination");
 async function listSavedItemsData(client) {
-    const { data, error } = await client.GET('/userCollectionSaveForLaters/{id}/relationships/items', {
-        params: {
-            path: { id: 'me' },
-            query: { include: ['items'] },
-        },
+    // Paginated: returns the full save-for-later collection, not just the first ~20.
+    const { included } = await (0, pagination_1.fetchAllPages)(client, '/userCollectionSaveForLaters/{id}/relationships/items', {
+        path: { id: 'me' },
+        query: { include: ['items'] },
     });
-    if (error || !data) {
-        throw new Error(`Failed to list saved items — ${JSON.stringify(error)}`);
-    }
-    const included = data.included ?? [];
     return included.map((item) => {
         const attrs = item.attributes ?? {};
         return {
