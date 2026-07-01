@@ -47,6 +47,7 @@
     "dist/**/*.js",
     "dist/**/*.d.ts",
     "!dist/__tests__",
+    "!dist/curation",
     "README.md",
     "LICENSE"
   ],

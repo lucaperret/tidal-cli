@@ -17,6 +17,8 @@ import { listSearchHistoryData, deleteSearchHistoryEntryData, clearSearchHistory
 import { listSavedItemsData, addSavedItemData, removeSavedItemData } from '../../lib/cli/saved';
 import { createShareData } from '../../lib/cli/share';
 
+import { registerCurationTools as registerCurationToolsShared } from '../../lib/cli/curation/register';
+
 import { getTidalTokens, getAccessTokenUserId, saveTidalTokens } from './redis';
 import { refreshTidalToken } from './tidal-oauth';
 
@@ -413,4 +415,11 @@ export function registerTools(server: McpServer) {
     const { client } = await getClientAndCountry(extractToken(extra));
     return text(await getUserProfileData(client));
   });
+}
+
+// Value-add ("curation") tools. Definitions live in the shared CLI module; this surface only
+// supplies its per-user bearer-token client getter. Registered alongside (or instead of) the
+// low-level tools depending on TIDAL_MCP_PROFILE — see app/api/mcp/route.ts.
+export function registerCurationTools(server: McpServer): void {
+  registerCurationToolsShared(server, async (extra: any) => getClientAndCountry(extractToken(extra)));
 }

@@ -47,4 +47,17 @@ for (const file of files) {
   }
 }
 
+// Copy the curation/ subdir (value-add layer) so the HTTP MCP server can import it.
+const curationSrc = path.join(srcDir, 'curation');
+const curationDest = path.join(destDir, 'curation');
+if (fs.existsSync(curationSrc)) {
+  fs.mkdirSync(curationDest, { recursive: true });
+  for (const file of fs.readdirSync(curationSrc)) {
+    if (file.endsWith('.js') || file.endsWith('.d.ts')) {
+      fs.copyFileSync(path.join(curationSrc, file), path.join(curationDest, file));
+      copied++;
+    }
+  }
+}
+
 console.log(`Copied ${copied} files from dist/ to lib/cli/`);
