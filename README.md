@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/lucaperret-tidal-cli-badge.png)](https://mseep.ai/app/lucaperret-tidal-cli)
+
 # tidal-cli
 
 <p align="center">
